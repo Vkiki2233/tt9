@@ -9,4 +9,6 @@
 	<string name="pref_chinese_common_only_summary">Keep words using the 3,500 level-one characters from the 2013 national table. Your own words are kept. Turn off for uncommon names and specialist terms.</string>
 	<string name="pref_chinese_fuzzy">Optional fuzzy Pinyin</string>
 	<string name="chinese_pinyin_unresolved">No matching reading. Correct the Pinyin or press Back to cancel the edit.</string>
+	<string name="pref_chinese_expanded_scroll_speed">Expanded candidate scrolling speed</string>
+	<string name="pref_chinese_expanded_scroll_speed_summary">Repeated movement while a direction key is held in the expanded Chinese candidate panel.</string>
 </resources>

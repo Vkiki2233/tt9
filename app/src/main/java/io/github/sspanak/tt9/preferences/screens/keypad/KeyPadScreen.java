@@ -2,6 +2,7 @@ package io.github.sspanak.tt9.preferences.screens.keypad;
 
 import androidx.annotation.Nullable;
 import androidx.preference.Preference;
+import androidx.preference.ListPreference;
 import androidx.preference.PreferenceCategory;
 
 import io.github.sspanak.tt9.R;
@@ -34,6 +35,8 @@ public class KeyPadScreen extends BaseScreenFragment {
 	}
 
 	private void createPhysicalKeysSection() {
+		ListPreference scrollSpeed = findPreference("pref_candidate_scroll_speed");
+		if (scrollSpeed != null) scrollSpeed.setSummaryProvider(ListPreference.SimpleSummaryProvider.getInstance());
 		Preference debounceTime = findPreference(DropDownKeyPadDebounceTime.NAME);
 		if (debounceTime instanceof DropDownKeyPadDebounceTime && activity != null) {
 			((DropDownKeyPadDebounceTime) debounceTime).populate(activity.getSettings()).preview();

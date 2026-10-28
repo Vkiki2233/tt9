@@ -1,4 +1,4 @@
-package io.github.sspanak.tt9.ui.tray;
+package io.github.sspanak.tt9.chinese;
 
 /** Stable shortcuts for each packed row, selected relative to the highlighted candidate. */
 final class CandidateNumbering {

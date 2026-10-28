@@ -131,7 +131,7 @@ public class ItemImportCustomWords extends ItemProcessCustomWordsAbstract {
 		}
 	}
 
-	public void setBrowseFilesLauncher(ActivityResultLauncher<Intent> launcher) {
+	void setBrowseFilesLauncher(ActivityResultLauncher<Intent> launcher) {
 		if (item != null) {
 			item.setEnabled(true);
 		}
@@ -152,7 +152,7 @@ public class ItemImportCustomWords extends ItemProcessCustomWordsAbstract {
 		importCustomWordsLauncher.launch(intent);
 	}
 
-	public void onFileSelected(ActivityResult result) {
+	void onFileSelected(ActivityResult result) {
 		if (result.getResultCode() != Activity.RESULT_OK) {
 			onFailure(activity.getString(R.string.dictionary_import_error_browsing_error));
 			Logger.e(getClass().getSimpleName(), "File picker activity failed with code: " + result.getResultCode());

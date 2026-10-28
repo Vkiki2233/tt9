@@ -1,4 +1,4 @@
-package io.github.sspanak.tt9.ui.tray;
+package io.github.sspanak.tt9.chinese;
 
 import org.junit.Test;
 

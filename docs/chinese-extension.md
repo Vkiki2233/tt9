@@ -19,7 +19,7 @@ table and its Unicode license, the compact prefix index, `chinese.apk` and
 Release packaging requires the same configured signing key for the base and both
 splits. Android checks the package, version and signing certificate during install.
 
-Enable Simplified Chinese, then use Appearance → 中文输入 → Import/Update
+Enable Simplified Chinese, then use Languages → Chinese Input → Import/Update
 Chinese Pack to select the ZIP. Android may ask to allow installs from this source
 and will ask for installation confirmation. Installing or removing splits can
 restart the input method. No previous dictionary download is required to import
@@ -34,12 +34,34 @@ advertised as the new code pack.
 Deleting the Chinese dictionary removes its settings and private pack data, then
 asks Android to remove both optional splits. Declining that confirmation leaves
 the code installed but the dictionary and Chinese profile are already removed.
-If Chinese remains enabled, the same Appearance entry remains available to import
+If Chinese remains enabled, the same Languages entry remains available to import
 the pack again. Deselecting a language does not delete it. User words and their explicit
 readings survive removal and return when the pack/dictionary is reloaded.
 
-The original custom-word import/export also accepts Chinese after the code split
-is installed. The format is `word<TAB>462106<TAB>reading`, with one unaccented
+Settings follow their function: Languages → Chinese Input contains pack
+import/update, personal words/readings, numeric candidate selection, prefix
+completion, domain vocabularies, expanded-panel repeat speed, fuzzy rules and the common-character filter. Appearance → Chinese
+Appearance contains candidate presentation. The single, global Interface Language
+selector belongs to the host Appearance screen: System and English are always
+available, and Chinese is offered only while its translation split is installed.
+Deleting Chinese resets a selected Chinese UI language to System while preserving
+an English preference. The global star/pound swap remains under Keypad.
+Ordinary single-row repeat speed also belongs to the host Keypad screen. The
+Chinese feature independently owns expanded-panel speed and all expanded layout,
+packing, row numbering, separators and navigation; the host retains only a generic
+`CandidatePanel`/adapter presentation contract. Without the feature, ordinary rows
+continue to work and expanded-panel settings are absent. Held single-row navigation
+stops at either end; ordinary short taps retain cyclic selection. Native repeat
+events are rate limited without a timer that could continue after release.
+
+Seven default-off domain vocabularies ship as a 126,839-byte indexed data file in
+the Chinese download, together with licenses and provenance notices. All parser,
+query, ranking, activation and bounded learning code lives in the optional feature.
+See [domain vocabulary sources and maintenance](chinese-domain-vocabulary.md).
+
+The single custom-word import/export in Languages → Added Words also accepts
+Chinese after the code split is installed. The Chinese word manager does not
+duplicate these actions. The format is `word<TAB>462106<TAB>reading`, with one unaccented
 syllable per Han character, for example `重庆<TAB>462106<TAB>chong qing`.
 Reading boundaries are stored separately, so editing `CHAN'GAN` into `CHANG'AN`
 does not silently lose the chosen boundary. Other languages retain their existing
@@ -62,6 +84,10 @@ older version-one indexes remain readable.
 The second Up enters Pinyin editing with the application's actual composing-text
 cursor. Left/Right, insertion and backspace move or modify that selection. Editors
 that reject composing selection retain the visible inline cursor fallback.
+Incomplete spelling choices can enter editing too: `745` with selected `RI'LE`
+opens only `RIL`, preserving the typed key count. Returning unchanged retains the
+original explicit spelling filter; edited readings retain resolved separators so
+`XI'AN` stays distinct from `XIAN`.
 
 The GitHub/local-install channel uses Android's package installer, not loose DEX
 loading. A Play distribution would need its own Play Feature Delivery integration.

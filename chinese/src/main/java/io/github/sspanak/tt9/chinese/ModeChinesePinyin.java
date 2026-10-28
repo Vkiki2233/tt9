@@ -26,6 +26,7 @@ public class ModeChinesePinyin extends ModePinyin {
 	@Nullable private volatile PinyinSequenceEditor sequenceEditor;
 	private String originalSequence = "";
 	private String originalReading = "";
+	private String initialEditableReading = "";
 	private final PinyinEditState editState = new PinyinEditState();
 	private long sequenceQueryVersion;
 	@Nullable private Handler sequenceEditHandler;
@@ -66,14 +67,13 @@ public class ModeChinesePinyin extends ModePinyin {
 			return false;
 		}
 		try {
-			String compact = PinyinSyllables.compact(selectedReading);
-			if (!PinyinFuzzy.matches(digitSequence, "", compact, settings.getChineseFuzzyOptions())) return false;
-			sequenceEditor = new PinyinSequenceEditor(PinyinSyllables.getSequence(compact), compact);
+			sequenceEditor = PinyinEditReading.create(digitSequence, selectedReading, settings.getChineseFuzzyOptions());
 		} catch (IllegalArgumentException e) {
 			return false;
 		}
 		originalSequence = digitSequence;
 		originalReading = selectedReading;
+		initialEditableReading = sequenceEditor.getReading();
 		digitSequence = sequenceEditor.getDigits();
 		if (sequenceEditHandler == null) sequenceEditHandler = new Handler(Looper.getMainLooper());
 		stem = "";
@@ -114,12 +114,12 @@ public class ModeChinesePinyin extends ModePinyin {
 			if (!editState.isQueryPending()) showUnresolvedReading();
 			return false;
 		}
-		String reading = sequenceEditor.hasResolvedReading() ? sequenceEditor.getReading() : "";
-		if (!reading.isEmpty() && reading.equals(PinyinSyllables.compact(originalReading))) reading = originalReading;
+		String reading = sequenceEditor.getResolvedReading();
+		if (!reading.isEmpty() && sequenceEditor.getReading().equals(initialEditableReading)) reading = originalReading;
 		invalidateSequenceQuery();
 		sequenceEditor = null;
 		editingTextField.setComposingCursor(-1);
-		originalSequence = originalReading = "";
+		originalSequence = originalReading = initialEditableReading = "";
 		returnToChinese(reading);
 		return true;
 	}
@@ -134,7 +134,7 @@ public class ModeChinesePinyin extends ModePinyin {
 		invalidateSequenceQuery();
 		sequenceEditor = null;
 		editingTextField.setComposingCursor(-1);
-		originalSequence = originalReading = "";
+		originalSequence = originalReading = initialEditableReading = "";
 		returnToChinese(reading);
 		return true;
 	}
@@ -322,7 +322,7 @@ public class ModeChinesePinyin extends ModePinyin {
 		invalidateSequenceQuery();
 		sequenceEditor = null;
 		if (editingTextField != null) editingTextField.setComposingCursor(-1);
-		originalSequence = originalReading = "";
+		originalSequence = originalReading = initialEditableReading = "";
 		if (editState != null) editState.reset();
 		super.reset();
 	}

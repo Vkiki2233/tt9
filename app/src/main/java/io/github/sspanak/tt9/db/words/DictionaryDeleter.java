@@ -100,7 +100,7 @@ public class DictionaryDeleter extends BaseSyncStore {
 		if (LanguageKind.isChinesePinyin(language)) {
 			ChinesePack.remove(context);
 			new SettingsStore(context).clearChineseSettings();
-			new Handler(Looper.getMainLooper()).post(() -> InterfaceLanguage.apply(context, "auto"));
+			new Handler(Looper.getMainLooper()).post(() -> InterfaceLanguage.apply(context, new SettingsStore(context).getInterfaceLanguage()));
 		}
 		return true;
 	}

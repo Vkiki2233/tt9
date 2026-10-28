@@ -162,13 +162,8 @@ public class SettingsUI extends SettingsTyping {
 		);
 	}
 
-	public boolean getChineseCandidateCompact() {
-		return prefs.getBoolean("pref_chinese_candidate_compact", true);
-	}
-
 	public boolean getChinesePrefixCompletion() { return prefs.getBoolean("pref_chinese_prefix_completion", true); }
 	public boolean getChineseCommonOnly() { return prefs.getBoolean("pref_chinese_common_only", false); }
-	public boolean getChineseNumberSelect() { return prefs.getBoolean("pref_chinese_number_select", true); }
 	public int getChineseFuzzyOptions() {
 		int options = 0;
 		String[] keys = {"nl", "z_zh", "c_ch", "s_sh", "en_eng", "in_ing"};
@@ -179,7 +174,8 @@ public class SettingsUI extends SettingsTyping {
 	public void clearChineseSettings() {
 		android.content.SharedPreferences.Editor editor = getPrefsEditor();
 		for (String key : prefs.getAll().keySet()) if (key.startsWith("pref_chinese_")) editor.remove(key);
-		editor.remove("pref_interface_language").apply();
+		if ("zh-CN".equals(getInterfaceLanguage())) editor.remove("pref_interface_language");
+		editor.apply();
 	}
 
 	public String getInterfaceLanguage() {
@@ -189,6 +185,15 @@ public class SettingsUI extends SettingsTyping {
 
 	public boolean getSuggestionSmoothScroll() {
 		return prefs.getBoolean("pref_suggestion_smooth_scroll", !DeviceInfo.noTouchScreen(context));
+	}
+
+	/** Minimum interval between held-arrow steps in the ordinary candidate row. */
+	public int getCandidateRepeatInterval() {
+		return switch (prefs.getString("pref_candidate_scroll_speed", "normal")) {
+			case "slow" -> 400;
+			case "fast" -> 120;
+			default -> 240;
+		};
 	}
 
 	public int getDefaultWidthPercent(boolean isPortrait) {

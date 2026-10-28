@@ -9,7 +9,9 @@ import io.github.sspanak.tt9.languages.Language;
 import io.github.sspanak.tt9.preferences.PreferencesActivity;
 import io.github.sspanak.tt9.preferences.screens.BaseScreenFragment;
 import io.github.sspanak.tt9.preferences.screens.chinese.ChineseSettingsScreen;
+import io.github.sspanak.tt9.preferences.screens.chinese.ChineseAppearanceScreen;
 import io.github.sspanak.tt9.preferences.settings.SettingsStore;
+import io.github.sspanak.tt9.ui.tray.CandidatePanel;
 
 /** Stable entry point retained by the base app's shrinker rule. */
 public final class ChineseFeature implements ChineseExtension {
@@ -22,6 +24,8 @@ public final class ChineseFeature implements ChineseExtension {
 	@Override public BaseScreenFragment createScreen(PreferencesActivity activity, String screenName) {
 		return switch (screenName) {
 			case "ChineseSettings" -> new ChineseSettingsScreen(activity);
+			case ChineseAppearanceScreen.NAME -> new ChineseAppearanceScreen(activity);
+			case "ChineseDomainPacks" -> new ChineseDomainPacksScreen(activity);
 			case ChineseUserWordsScreen.NAME -> new ChineseUserWordsScreen(activity);
 			default -> null;
 		};
@@ -34,5 +38,13 @@ public final class ChineseFeature implements ChineseExtension {
 
 	@Override public String exportUserWord(String rawStoredWord) {
 		return ChineseUserWord.fromStored(rawStoredWord).exportLine();
+	}
+
+	@Override public int getExpandedCandidateRepeatInterval(SettingsStore settings) {
+		return ChineseCandidateSettings.getExpandedCandidateRepeatInterval(settings);
+	}
+
+	@Override public CandidatePanel createCandidatePanel(SettingsStore settings, CandidatePanel.Host host) {
+		return new ChineseExpandedCandidates(settings, host);
 	}
 }

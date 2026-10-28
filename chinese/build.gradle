@@ -20,7 +20,10 @@ android {
 	testOptions.unitTests.all {
 		systemProperty 'tt9.commonHanTable', rootProject.file('app/languages/chinese/common-3500.txt').absolutePath
 		systemProperty 'tt9.chinesePrefixIndex', project(':app').chinesePrefixIndexFile.get().asFile.absolutePath
+		systemProperty 'tt9.chineseDomainIndex', project(':app').chineseDomainIndexFile.get().asFile.absolutePath
+		systemProperty 'tt9.chineseDomainsSource', rootProject.file('app/languages/chinese/domains').absolutePath
 		dependsOn ':app:buildChinesePrefixIndex'
+		dependsOn ':app:buildChineseDomains'
 	}
 }
 

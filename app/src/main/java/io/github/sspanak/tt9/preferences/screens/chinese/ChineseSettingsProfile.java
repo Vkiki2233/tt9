@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.function.Consumer;
 
 import io.github.sspanak.tt9.db.DataStore;
+import io.github.sspanak.tt9.extensions.ChineseExtensions;
+import io.github.sspanak.tt9.extensions.ChinesePack;
 import io.github.sspanak.tt9.languages.Language;
 import io.github.sspanak.tt9.languages.LanguageCollection;
 import io.github.sspanak.tt9.preferences.settings.SettingsStore;
@@ -35,5 +37,13 @@ public final class ChineseSettingsProfile {
 		DataStore.exists(installed -> new Handler(Looper.getMainLooper()).post(
 			() -> onResult.accept(!installed.isEmpty())
 		), languages);
+	}
+
+
+	/** Presentation settings require the installed feature; first import belongs to Languages. */
+	public static void checkAppearanceAvailable(Context context, Consumer<Boolean> onResult) {
+		LanguageCollection.init(context);
+		if (ChineseExtensions.get() == null || !ChinesePack.isDataAvailable(context)) onResult.accept(false);
+		else checkInstalled(context, onResult);
 	}
 }

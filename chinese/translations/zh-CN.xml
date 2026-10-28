@@ -156,6 +156,11 @@
 	<string name="pref_upside_down_keys_summary">适用于第一排为 7–8–9，而非 1–2–3 的电脑数字小键盘。</string>
 	<string name="pref_swap_star_pound">交换 * 与 # 键的功能</string>
 	<string name="pref_swap_star_pound_summary">同时交换短按和长按功能。关闭后恢复原有分配。</string>
+	<string name="pref_candidate_scroll_speed">单行候选滚动速度</string>
+	<string name="pref_candidate_scroll_speed_summary">调整在普通单行候选栏（包括拼音候选）中长按左右方向键时的连续移动速度。</string>
+	<string name="candidate_scroll_speed_slow">慢</string>
+	<string name="candidate_scroll_speed_normal">正常</string>
+	<string name="candidate_scroll_speed_fast">快</string>
 	<string name="pref_color_scheme">主题</string>
 	<string name="pref_dark_theme_auto">自动</string>
 	<string name="pref_color_scheme_device_dark">系统深色</string>
@@ -321,7 +326,13 @@
 	<string name="voice_input_error_no_network">没有网络连接</string>
 	<string name="voice_input_error_not_available">语音输入不可用</string>
 	<string name="pref_chinese_settings">中文输入</string>
-	<string name="pref_chinese_settings_summary">设置中文候选区和界面语言</string>
+	<string name="pref_chinese_settings_summary">词库、读音与中文转换选项</string>
+	<string name="pref_chinese_appearance">中文显示</string>
+	<string name="pref_chinese_appearance_summary">中文候选区布局</string>
+	<string name="pref_interface_language">界面语言</string>
+	<string name="pref_interface_language_summary">“跟随系统”使用手机的系统语言；切换输入语言不会改变此设置。</string>
+	<string name="pref_interface_language_system">跟随系统</string>
+	<string name="pref_interface_language_english">English</string>
 	<string name="chinese_pack_title">中文扩展</string>
 	<string name="chinese_pack_system_confirmation">请完成 Android 系统确认，以安装或移除中文功能。</string>
 	<string name="chinese_pack_install_failed">Android 无法安装或移除中文扩展，请确认主程序与中文包的版本和签名匹配。</string>

@@ -12,6 +12,7 @@ import java.util.ArrayDeque;
 
 import io.github.sspanak.tt9.hacks.AppHacks;
 import io.github.sspanak.tt9.hacks.InputType;
+import io.github.sspanak.tt9.extensions.ChineseExtensions;
 import io.github.sspanak.tt9.ime.helpers.TextField;
 import io.github.sspanak.tt9.ime.helpers.TextSelection;
 import io.github.sspanak.tt9.ime.helpers.Key;
@@ -42,6 +43,7 @@ abstract public class MainViewHandler extends HotkeyHandler {
 
 	@Override
 	protected boolean onStart(EditorInfo field, boolean restarting) {
+		resetCandidateRepeat();
 		resetNormalizedDimensions();
 		touchExplorationEnabled = DeviceInfo.isTouchExplorationEnabled(this);
 		return super.onStart(field, restarting);
@@ -74,7 +76,7 @@ abstract public class MainViewHandler extends HotkeyHandler {
 			finishPinyinEdit(pinyin, false);
 			return true;
 		}
-		if (suggestionOps.isExpanded() && mInputMode.supportsExpandedSuggestions() && settings.getChineseNumberSelect() && key >= 1 && key <= 9) {
+		if (suggestionOps.isExpanded() && mInputMode.supportsExpandedSuggestions() && suggestionOps.usesNumberKeys() && key >= 1 && key <= 9) {
 			mainView.renderClickNumber(key);
 			if (!hold && suggestionOps.selectNumbered(key)) {
 				super.onOK(Key.numberToCode(settings, key));
@@ -143,15 +145,24 @@ abstract public class MainViewHandler extends HotkeyHandler {
 			&& !isFnPanelVisible() && !isVoiceInputActive()
 			&& !suggestionOps.containsNoOrdinaryWords() && !suggestionOps.containsStem()
 			&& !mInputMode.isStemFilterFuzzy()
-			&& suggestionOps.getCurrent().codePoints().anyMatch(c -> Character.UnicodeScript.of(c) == Character.UnicodeScript.HAN);
+			&& suggestionOps.canExpand();
 	}
 
 	@Override
 	protected boolean canRepeatCandidateArrow(int keyCode) {
-		return suggestionOps.isExpanded()
-			|| (mInputMode.supportsExpandedSuggestions() && mInputMode.isStemFilterFuzzy()
-				&& !(mInputMode instanceof ModePinyin pinyin && pinyin.isPinyinSequenceEditing())
-				&& (Key.isArrowLeft(keyCode) || Key.isArrowRight(keyCode)));
+		if (suggestionOps.isExpanded()) return true;
+		if (!(Key.isArrowLeft(keyCode) || Key.isArrowRight(keyCode))
+			|| mInputMode instanceof ModePinyin pinyin && pinyin.isPinyinSequenceEditing()
+			|| isFnPanelVisible() || isVoiceInputActive() || suggestionOps.isEmpty()) return false;
+		// A configured hold action (including recomposition's letter editing) takes precedence.
+		return (keyCode == settings.getKeyPreviousSuggestion() || keyCode == settings.getKeyNextSuggestion())
+			&& !getFinalContext().isHoldHotkey(-keyCode);
+	}
+
+	@Override
+	protected int getCandidateArrowRepeatInterval() {
+		var chinese = suggestionOps.isExpanded() ? ChineseExtensions.get() : null;
+		return chinese == null ? super.getCandidateArrowRepeatInterval() : chinese.getExpandedCandidateRepeatInterval(settings);
 	}
 
 	private void moveInCandidatePanel(int keyCode) {
@@ -205,6 +216,7 @@ abstract public class MainViewHandler extends HotkeyHandler {
 
 	@Override
 	protected void onFinishTyping(boolean willExitInput) {
+		resetCandidateRepeat();
 		pendingPinyinKeys.clear();
 		suggestionOps.collapse();
 		super.onFinishTyping(willExitInput);

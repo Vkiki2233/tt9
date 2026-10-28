@@ -270,17 +270,18 @@ public class WordStore extends BaseSyncStore {
 				return;
 			}
 
-			int wordPosition = 0;
+			Word selectedWord = null;
 			for (Word tw : topWords) {
 				if (tw.word.toUpperCase(language.getLocale()).equals(word.toUpperCase(language.getLocale()))) {
-					wordPosition = tw.position;
+					selectedWord = tw;
 					break;
 				}
 			}
+			if (selectedWord == null) throw new Exception("No such word");
 
 			int newTopFrequency = topWord.frequency + 1;
 			Text wordFilter = new Text(language, word.length() == 1 ? word : null);
-			if (!UpdateOps.changeFrequency(sqlite.getDb(), language, wordFilter, wordPosition, newTopFrequency)) {
+			if (!UpdateOps.changeFrequency(sqlite.getDb(), language, wordFilter, selectedWord.position, newTopFrequency)) {
 				throw new Exception("No such word");
 			}
 

@@ -1,4 +1,4 @@
-package io.github.sspanak.tt9.ui.tray;
+package io.github.sspanak.tt9.chinese;
 
 import android.graphics.Canvas;
 import android.graphics.Rect;

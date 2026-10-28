@@ -22,7 +22,7 @@ public final class ChinesePack {
 	public static final String APK_NAME = "chinese.apk";
 	public static final String LANGUAGE_APK_NAME = "chinese-ui.apk";
 	private static final String DIRECTORY = "chinese-pack";
-	private static final int MAX_FILES = 8;
+	private static final int MAX_FILES = 12;
 	private static final int MAX_BYTES = 64 * 1024 * 1024;
 	private static final AtomicLong generation = new AtomicLong();
 

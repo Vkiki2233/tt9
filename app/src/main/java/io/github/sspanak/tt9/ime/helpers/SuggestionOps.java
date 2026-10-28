@@ -155,14 +155,22 @@ public class SuggestionOps {
 
 
 	public void scrollTo(int index) {
+		scrollTo(index, true);
+	}
+
+	public void scrollTo(int index, boolean wrap) {
 		if (suggestionBar != null) {
-			suggestionBar.scrollToSuggestion(index);
+			suggestionBar.scrollToSuggestion(index, wrap);
 		}
 	}
 
 	public boolean isExpanded() {
 		return suggestionBar != null && suggestionBar.isExpanded();
 	}
+
+	public boolean canExpand() { return suggestionBar != null && suggestionBar.canExpand(); }
+
+	public boolean usesNumberKeys() { return suggestionBar != null && suggestionBar.usesNumberKeys(); }
 
 	public boolean expand() {
 		cancelDelayedAccept();

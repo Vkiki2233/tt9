@@ -3,6 +3,7 @@ package io.github.sspanak.tt9.ime;
 import android.view.KeyEvent;
 
 import io.github.sspanak.tt9.ime.helpers.Key;
+import io.github.sspanak.tt9.ime.helpers.CandidateKeyRepeat;
 import io.github.sspanak.tt9.preferences.screens.debug.DropDownInputHandlingMode;
 import io.github.sspanak.tt9.preferences.settings.SettingsStore;
 import io.github.sspanak.tt9.util.Timer;
@@ -20,11 +21,13 @@ abstract class KeyPadHandler extends UiHandler {
 
 	private int lastNumKeyCode = 0;
 	private int numKeyRepeatCounter = 0;
-	private int repeatedCandidateArrow = 0;
+	private final CandidateKeyRepeat candidateRepeat = new CandidateKeyRepeat();
 	private boolean repeatingCandidateArrow;
 
-	protected boolean isCandidateArrowRepeating() { return repeatingCandidateArrow; }
+	public boolean isCandidateArrowRepeating() { return repeatingCandidateArrow; }
 	protected boolean canRepeatCandidateArrow(int keyCode) { return false; }
+	protected int getCandidateArrowRepeatInterval() { return settings.getCandidateRepeatInterval(); }
+	protected void resetCandidateRepeat() { candidateRepeat.reset(); }
 
 
 	/**
@@ -63,7 +66,7 @@ abstract class KeyPadHandler extends UiHandler {
 
 //		Logger.d("onKeyDown", "Key: " + event + " repeat?: " + event.getRepeatCount() + " long-time: " + event.isLongPress());
 		if (Key.isArrow(keyCode) && canRepeatCandidateArrow(keyCode) && event.getRepeatCount() > 0) {
-			repeatedCandidateArrow = keyCode;
+			if (!candidateRepeat.dispatch(keyCode, event.getEventTime(), getCandidateArrowRepeatInterval())) return true;
 			repeatingCandidateArrow = true;
 			try {
 				return onHotkey(keyCode, true, false);
@@ -170,8 +173,7 @@ abstract class KeyPadHandler extends UiHandler {
 		}
 
 //		Logger.d("onKeyUp", "Key: " + keyCode + " repeat?: " + event.getRepeatCount());
-		if (keyCode == repeatedCandidateArrow) {
-			repeatedCandidateArrow = 0;
+		if (candidateRepeat.release(keyCode)) {
 			if (ignoreNextKeyUp == keyCode) {
 				ignoreNextKeyUp = 0;
 			}

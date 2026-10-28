@@ -52,7 +52,7 @@ public final class ChinesePackInstaller {
 	}
 
 	public static boolean isInstalled(Context context) { return installedApk(context, SPLIT_NAME) != null; }
-	static boolean isLanguageInstalled(Context context) { return installedApk(context, LANGUAGE_SPLIT_NAME) != null; }
+	public static boolean isLanguageInstalled(Context context) { return installedApk(context, LANGUAGE_SPLIT_NAME) != null; }
 	static boolean isRemovalPending(Context context) { return state(context).getBoolean(REMOVE, false); }
 
 	public static boolean needsInstall(Context context) {

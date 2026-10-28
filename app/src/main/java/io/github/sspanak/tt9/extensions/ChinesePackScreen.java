@@ -7,7 +7,7 @@ import io.github.sspanak.tt9.preferences.PreferencesActivity;
 import io.github.sspanak.tt9.preferences.screens.BaseScreenFragment;
 import io.github.sspanak.tt9.preferences.screens.chinese.ChineseSettingsProfile;
 
-/** Keeps the single Chinese settings entry useful before its optional split is installed. */
+/** Keeps Languages' Chinese input entry useful before its optional split is installed. */
 public class ChinesePackScreen extends BaseScreenFragment {
 	public ChinesePackScreen() { super(); }
 	public ChinesePackScreen(PreferencesActivity activity) { super(activity); }

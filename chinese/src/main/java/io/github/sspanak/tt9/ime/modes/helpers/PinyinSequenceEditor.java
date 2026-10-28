@@ -7,6 +7,7 @@ import java.util.Locale;
 public final class PinyinSequenceEditor {
 	private String digits;
 	private String reading;
+	private String resolvedReading;
 	private int cursor;
 	private boolean readingConfirmed = true;
 
@@ -14,6 +15,7 @@ public final class PinyinSequenceEditor {
 	public PinyinSequenceEditor(String digits, String reading) {
 		this.digits = digits;
 		this.reading = reading.toUpperCase(Locale.ROOT);
+		resolvedReading = this.reading;
 		if (!matchesDigits(this.reading, digits)) {
 			throw new IllegalArgumentException("The reading must match the phonetic key sequence");
 		}
@@ -26,6 +28,7 @@ public final class PinyinSequenceEditor {
 	public synchronized int getCursor() { return cursor; }
 	public synchronized String getPreview() { return reading.substring(0, cursor) + "|" + reading.substring(cursor); }
 	public synchronized boolean hasResolvedReading() { return readingConfirmed && !reading.isEmpty() && matchesDigits(reading, digits); }
+	public synchronized String getResolvedReading() { return hasResolvedReading() ? resolvedReading : ""; }
 
 
 	public synchronized void moveCursor(int direction) {
@@ -64,9 +67,10 @@ public final class PinyinSequenceEditor {
 	/** Resolve ambiguous inserted digits using readings that preserve the other selected letters. */
 	public synchronized void resolveReading(Collection<String> candidates) {
 		String best = null;
+		String bestReading = "";
 		int bestScore = -1;
 		for (String candidate : candidates) {
-			String normalized = candidate.toUpperCase(Locale.ROOT);
+			String normalized = candidate.toUpperCase(Locale.ROOT).replace("'", "");
 			if (!matchesDigits(normalized, digits)) {
 				continue; // Ignore stale query results and longer completions.
 			}
@@ -78,6 +82,7 @@ public final class PinyinSequenceEditor {
 			}
 			if (score > bestScore) {
 				best = normalized;
+				bestReading = candidate.toUpperCase(Locale.ROOT);
 				bestScore = score;
 			}
 		}
@@ -85,6 +90,7 @@ public final class PinyinSequenceEditor {
 			reading = best;
 		}
 		readingConfirmed = best != null;
+		resolvedReading = bestReading;
 	}
 
 

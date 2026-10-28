@@ -199,10 +199,30 @@ public class ChinesePackTest {
 		File root = temporary.newFolder();
 		oldPack(root);
 		Map<String, String> entries = new LinkedHashMap<>();
-		for (int i = 0; i < 9; i++) entries.put("chinese/file" + i + ".bin", "data");
+		for (int i = 0; i < 13; i++) entries.put("chinese/file" + i + ".bin", "data");
 		try (ZipInputStream zip = archive(entries)) {
 			assertThrows(IOException.class, () -> ChinesePack.stage(root, zip));
 		}
+		assertOnlyCurrentPackRemains(root);
+	}
+
+	@Test public void combinedPackWithDomainDataAndNoticesFitsTheControlledTwelveEntryLimit() throws IOException {
+		File root = temporary.newFolder();
+		Map<String, String> entries = completePackEntries();
+		entries.put("chinese/UNICODE-LICENSE.txt", "Unicode license");
+		entries.put("chinese/chinese-domains.bin", "domain index");
+		for (String name : new String[]{"rime-ice-license", "rime-ice-notice", "chinese-domains-notice", "thuocl-license", "extra-one", "extra-two"}) {
+			entries.put("licenses/" + name + ".txt", "license or source notice");
+		}
+		assertEquals(12, entries.size());
+		try (ZipInputStream zip = archive(entries); ChinesePack.Prepared prepared = ChinesePack.stage(root, zip)) {
+			assertTrue(prepared.isComplete());
+			prepared.activate();
+			prepared.confirm();
+		}
+		assertEquals("domain index", Files.readString(new File(root, "chinese-pack/chinese-domains.bin").toPath()));
+		assertFalse(new File(root, "licenses").exists());
+		assertFalse(new File(root, "chinese-pack/thuocl-license.txt").exists());
 		assertOnlyCurrentPackRemains(root);
 	}
 
@@ -233,7 +253,7 @@ public class ChinesePackTest {
 			File root = temporary.newFolder();
 			oldPack(root);
 			Map<String, String> entries = new LinkedHashMap<>();
-			for (int i = 0; i < 9; i++) entries.put("ignored" + i + suffix, "");
+			for (int i = 0; i < 13; i++) entries.put("ignored" + i + suffix, "");
 			try (ZipInputStream zip = archive(entries)) {
 				assertThrows(IOException.class, () -> ChinesePack.stage(root, zip));
 			}

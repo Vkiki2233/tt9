@@ -8,21 +8,65 @@ input contribution. See [the update description](chinese-update.md) for scope an
 
 | Check | Result |
 | --- | --- |
-| Host and Chinese feature unit tests | 162 tests passing in Full; 162 in Lite |
+| Host and Chinese feature unit tests | 205 tests passing in Full; 205 in Lite (64 host, 141 feature) |
 | Debug APK and combined Chinese pack build | Passed |
-| Full debug Android lint | 0 errors; warnings remain |
+| Full debug Android lint | 0 errors, 381 warnings |
 | Updated Full release with R8 and resource shrinking, including combined pack | Build passed |
-| Updated Full release Android lint | 0 errors, 367 warnings |
-| Mive, Android 12, debug operation combinations | 11/11 passed; reading-to-Han mapping also passed |
-| Android 15 / API 35 debug operation combinations | 23/23 passed |
-| API 35 minified release operation combinations | 6/6 passed |
-| API 35 candidate-grid and repeat checks | 8/8 passed |
-| API 35 installed-engine profiles | 24/24 passed |
+| Updated Full release Android lint | 0 errors, 381 warnings |
+| Mive, Android 12, current edit/scroll combinations | 9/9 passed; three-option speed dialog also verified |
+| API 35 current optional-domain engine checks | 252/252 passed, including all 103 new pairs enabled/disabled |
+| API 35 current interactive speed choices and native repeats | 9/9 passed: English, Pinyin and expanded panel, three speeds each |
+| API 35 signed-pack lifecycle, debug and minified | Real SAF/native install and split removal passed; personal words and host settings retained |
+| Final catalog UI, debug English and minified Chinese | Seven compact rows, full scrollable provenance and persistent toggles passed |
+| Final minified caret/panel smoke | System selection, edit/convert/reopen and numbered expanded panel passed |
 
 Build results and runtime results are recorded separately. The minified runtime
 coverage is the API 35 smoke described below; Mive used the debug artifacts.
 Lint and Gradle warnings are present; this contribution does not claim a
 warning-free build.
+
+The current revision moves Chinese expanded layout, row numbering, separators and
+navigation into the optional split, adds seven default-off domain vocabularies,
+reclassifies settings and separates host single-row speed from Chinese expanded
+speed. The engine and speed totals above cover this revision. The earlier device
+matrices below (11 Mive, 23 API 35 debug, 6 API 35 minified combinations, 8 grid
+checks and 24 engine profiles) describe the previous Pinyin revision and are kept
+as historical evidence, not counted as new runs after this extraction.
+
+Production-data JVM tests load the real Groovy-generated binary with the Java
+reader and check all 2,980 source rows, 2,961 merged pairs, weights, domain masks,
+per-domain isolation and prefix bounds. These run in Lite CI as well as Full.
+The API 35 engine run preserves both domain preference keys and the complete
+factory frequency totals, and creates/removes an isolated position-zero fixture
+to verify a missing learning target cannot modify an unrelated word.
+
+Mive's current checks cover all three edit exits, `745 → RI'LE → RIL`, appending
+`3` and converting back to 日了, unchanged reading boundaries, `942 → XIA` plus
+`6` resolving to `XI'AN`, held-list endpoints and release, short-tap wrapping,
+expanded navigation/collapse and row-based number selection. Its six dictionary
+tables, including all 482,284 word/frequency rows, 321,524 position rows, existing
+learned pairs and custom-reading tables, were compared before/after and remained
+identical. Numeric selection uses the actual learned leading candidate rather
+than assuming a pristine dictionary always leads with 你.
+
+The final resource-only dialog correction was rebuilt and linted in debug and R8.
+All four base/feature DEX sets are byte-identical before and after that correction;
+the final Mive APK hashes were verified, and its three speed choices were checked
+again. Initial harness setup failures (a stopped IME falling back to Mive's system
+keyboard, an unfocused test editor, and an unreachable spelling fixture) are kept
+separately from product results. Native injected key events verify application
+handling. The Mive user separately confirmed that the new held-arrow endpoints,
+Pinyin-letter editing and return to Han candidates now work through physical keys;
+this is a qualitative confirmation, not a timed hardware-scanner benchmark.
+
+The later catalog-only revision keeps short count summaries and moves complete
+licenses/provenance into a scrollable dialog. Its debug English and minified
+Chinese views were checked separately, including all seven counts, full metadata
+and persisted toggles. No prediction, timing, navigation or data format changed.
+The final runtime base/feature/translation hashes were verified. The API 35 test
+apps/files were removed, original application APK hashes and captured IME/display
+settings were restored, and the emulator was shut down. Mive retains the updated
+matching test build alongside its untouched original TT9 64.0 installation.
 
 The current unit suite includes the repaired transitions: ordinary `XIAN` versus
 an old editing preview, repeated edit/convert/reopen cycles, query/result/render
@@ -58,7 +102,7 @@ rollback. Inspect the host and feature test reports under their respective
 Install the generated base APK from `app/build/outputs/apk/lite/debug/` on a test
 device or emulator. Enable TT9 and Simplified Chinese, then import
 `app/build/outputs/chinese-packs/liteDebug/zh-simplified-pinyin.zip` through
-**Appearance → Chinese input → Import/update Chinese pack**. Confirm Android's
+**Languages → Chinese Input → Import/update Chinese pack**. Confirm Android's
 install-source and split-install prompts. The base and both splits must be from
 the same build and use the same signing certificate. Split installation may
 restart the input method.
@@ -202,8 +246,11 @@ path. Verify the following on the minified build:
 
 1. Start the base without the feature installed, open the Chinese bootstrap import
    screen, and install both signed splits using Android's confirmation.
-2. Reopen Chinese settings and word management, change the optional UI language,
-   and confirm that the reflected feature entry point and feature resources load.
+2. Open Languages → Chinese Input and word management, plus Appearance → Chinese
+   Appearance. Change the host Appearance → Interface Language preference and
+   check that Chinese is offered only with the translation split installed.
+   Confirm that reflected feature entry points and resources load, and that
+   import/export appears only in Languages → Added Words.
 3. Repeat candidate expansion, current-row number selection, and held-arrow
    release checks. Cycle Han → spellings → Pinyin edit → Han → spellings, checking
    the whole alternative list after each cycle. Include rapid Up/Up, immediate

@@ -88,13 +88,16 @@ androidComponents.onVariants(androidComponents.selector().all()) { variant ->
 		}
 	}
 	tasks.register("package${variantName}ChinesePack") {
-		dependsOn buildDictionaryDownloads, buildChinesePrefixIndex, copyNgramsToDownloads,
+		dependsOn buildDictionaryDownloads, buildChinesePrefixIndex, buildChineseDomains, copyNgramsToDownloads,
 			"assemble${variantName}", ":chinese:assemble${variantName}", languageTask
 		inputs.file(new File(DICTIONARIES_DOWNLOAD_DIR, 'zh-simplified-pinyin.zip'))
 		inputs.file(file('languages/chinese/common-3500.txt'))
 		inputs.file(file('languages/chinese/UNICODE-LICENSE.txt'))
 		inputs.files(DictionaryTools.getDictionaryNotices(file('languages/dictionaries/zh-simplified-pinyin.csv')).values())
 		inputs.file(chinesePrefixIndexFile)
+		inputs.file(chineseDomainIndexFile)
+		inputs.file(chineseDomainNoticeFile)
+		inputs.file(file('languages/chinese/domains/THUOCL-LICENSE.txt'))
 		inputs.file(languageOutput)
 		inputs.files(featureDirectory.map { directory -> fileTree(directory).matching { include '*.apk' } })
 		outputs.file(output)
@@ -121,6 +124,9 @@ androidComponents.onVariants(androidComponents.selector().all()) { variant ->
 					'chinese/common-3500.txt': file('languages/chinese/common-3500.txt'),
 					'chinese/UNICODE-LICENSE.txt': file('languages/chinese/UNICODE-LICENSE.txt'),
 					'chinese/zh-simplified-prefixes.bin': chinesePrefixIndexFile.get().asFile,
+					'chinese/chinese-domains.bin': chineseDomainIndexFile.get().asFile,
+					'licenses/chinese-domains-notice.txt': chineseDomainNoticeFile.get().asFile,
+					'licenses/thuocl-license.txt': file('languages/chinese/domains/THUOCL-LICENSE.txt'),
 					'chinese/chinese.apk': featureApks[0],
 					'chinese/chinese-ui.apk': languageOutput.get().asFile
 				].each { name, source -> source.withInputStream { input -> writeChinesePackEntry(zip, name, input) } }

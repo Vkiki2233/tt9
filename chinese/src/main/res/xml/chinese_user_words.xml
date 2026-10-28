@@ -2,8 +2,6 @@
 <PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
 	<Preference app:key="chinese_user_add" app:title="@string/chinese_user_add" />
 	<Preference app:key="chinese_user_format" app:summary="@string/chinese_user_format" app:selectable="false" />
-	<Preference app:key="dictionary_import_custom" app:title="@string/chinese_user_import" />
-	<Preference app:key="dictionary_export_custom" app:title="@string/chinese_user_export_all" />
 	<EditTextPreference app:key="chinese_user_search" app:title="@string/chinese_user_search" app:persistent="false" />
 	<PreferenceCategory app:key="chinese_user_list" app:title="@string/chinese_user_list" />
 </PreferenceScreen>

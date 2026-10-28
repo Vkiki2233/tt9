@@ -160,10 +160,11 @@ public class PreferencesActivity extends PremiumPreferencesActivity implements P
 
 		return switch (name) {
 			case AppearanceScreen.NAME -> new AppearanceScreen(this);
-			case "ChineseSettings", "ChineseUserWords" -> {
+			case "ChineseSettings", "ChineseUserWords", "ChineseAppearance", "ChineseDomainPacks" -> {
 				ChineseExtension chinese = ChineseExtensions.get();
 				BaseScreenFragment chineseScreen = chinese != null && ChinesePack.isDataAvailable(this) ? chinese.createScreen(this, name) : null;
-				yield chineseScreen != null ? chineseScreen : new ChinesePackScreen(this);
+				yield chineseScreen != null ? chineseScreen
+					: "ChineseAppearance".equals(name) ? new AppearanceScreen(this) : new ChinesePackScreen(this);
 			}
 			case AppearanceUnfoldedScreen.NAME -> new AppearanceUnfoldedScreen(this);
 			case DebugScreen.NAME -> new DebugScreen(this);

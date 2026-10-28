@@ -4,9 +4,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Color;
 import android.text.SpannableString;
-import android.text.TextUtils;
 import android.text.style.RelativeSizeSpan;
-import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,6 +17,12 @@ import java.util.List;
 import java.util.function.Consumer;
 
 public class SuggestionsAdapter extends RecyclerView.Adapter<SuggestionsAdapter.ViewHolder> {
+	/** Optional item styling supplied by a feature; ordinary row binding stays unchanged. */
+	public interface Presentation {
+		void bind(View item, TextView text, int position);
+		CharSequence text(String candidate, int position);
+		int viewType();
+	}
 	private final Consumer<Integer> onItemClick;
 	private final Consumer<Integer> onItemLongClick;
 	private final int layout;
@@ -31,12 +35,7 @@ public class SuggestionsAdapter extends RecyclerView.Adapter<SuggestionsAdapter.
 	private int colorHighlight;
 	private int backgroundHighlight;
 	private int selectedIndex = 0;
-	private int gridRowHeight;
-	private int expandedPadding;
-	private float expandedBaseTextSize;
-	private int expandedSeparatorWidth;
-	private PackedCandidateNavigation expandedNavigation;
-	private CandidateNumbering numbering;
+	private Presentation presentation;
 
 
 	public SuggestionsAdapter(Context context, @NonNull Consumer<Integer> onItemClick, @NonNull Consumer<Integer> onItemLongClick, int layout, int textViewResourceId, List<String> suggestions) {
@@ -58,26 +57,10 @@ public class SuggestionsAdapter extends RecyclerView.Adapter<SuggestionsAdapter.
 
 	@Override
 	public void onBindViewHolder(ViewHolder holder, int position) {
-		if (gridRowHeight > 0) {
-			// Keep GridLayoutManager's span metadata when a visible holder is rebound.
-			ViewGroup.LayoutParams params = holder.itemView.getLayoutParams();
-			params.width = Math.max(1, expandedNavigation.getItemWidth(position) - expandedSeparatorWidth);
-			params.height = gridRowHeight;
-			holder.itemView.setLayoutParams(params);
-			holder.suggestionItem.getLayoutParams().width = ViewGroup.LayoutParams.MATCH_PARENT;
-			holder.suggestionItem.setMinimumWidth(0);
-			holder.suggestionItem.setPadding(expandedPadding, 0, expandedPadding, 0);
-			holder.suggestionItem.setTextSize(TypedValue.COMPLEX_UNIT_PX, expandedBaseTextSize);
-			holder.suggestionItem.setSingleLine(true);
-			holder.suggestionItem.setEllipsize(TextUtils.TruncateAt.END);
-		}
-		int number = gridRowHeight > 0 && numbering != null ? numbering.getNumber(position) : 0;
-		String prefix = number > 0 ? number + " " : "";
-		SpannableString scaledText = new SpannableString(prefix + mSuggestions.get(position));
+		if (presentation != null) presentation.bind(holder.itemView, holder.suggestionItem, position);
+		CharSequence text = presentation != null ? presentation.text(mSuggestions.get(position), position) : mSuggestions.get(position);
+		SpannableString scaledText = new SpannableString(text);
 		scaledText.setSpan(new RelativeSizeSpan(textSize), 0, scaledText.length(), 0);
-		if (number > 0) {
-			scaledText.setSpan(new RelativeSizeSpan(0.65f), 0, prefix.length(), 0);
-		}
 		holder.suggestionItem.setText(scaledText);
 
 		holder.suggestionItem.setTag(position);
@@ -98,21 +81,10 @@ public class SuggestionsAdapter extends RecyclerView.Adapter<SuggestionsAdapter.
 
 	@Override
 	public int getItemViewType(int position) {
-		return gridRowHeight > 0 ? 1 : 0;
+		return presentation != null ? presentation.viewType() : 0;
 	}
 
-	public void setGridLayout(PackedCandidateNavigation navigation, int height, int padding, float baseTextSize, int separatorWidth, boolean numbered) {
-		expandedNavigation = navigation;
-		gridRowHeight = height;
-		expandedPadding = padding;
-		expandedBaseTextSize = baseTextSize;
-		expandedSeparatorWidth = separatorWidth;
-		numbering = numbered && navigation != null ? new CandidateNumbering(navigation) : null;
-	}
-
-	public int getNumberedIndex(int number) {
-		return numbering != null ? numbering.getIndex(number, selectedIndex) : -1;
-	}
+	public void setPresentation(Presentation presentation) { this.presentation = presentation; }
 
 
 	public void setSelection(int newIndex) {
