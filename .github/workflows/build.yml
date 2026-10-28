@@ -19,8 +19,6 @@ jobs:
     - name: Checkout project sources
       uses: actions/checkout@v5
       with:
-        fetch-depth: 0
-      with:
         fetch-depth: 0 # TT9 versions and dictionary URLs depend on Git history/tags.
         persist-credentials: false
     - name: Setup Java
