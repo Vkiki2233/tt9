@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="chinese_pack_import_update">更新/导入中文包</string>
+	<string name="pref_chinese_number_select">展开候选时数字直选</string>
+	<string name="pref_chinese_number_select_summary">候选面板展开时，按 1–9 选择当前高亮框所在行的候选词。</string>
+	<string name="pref_chinese_prefix_completion">汉字词语补全</string>
+	<string name="pref_chinese_prefix_completion_summary">根据当前汉字候选，联想词库中以它开头的更长词语。完全离线。</string>
+	<string name="pref_chinese_common_only">隐藏生僻字</string>
+	<string name="pref_chinese_common_only_summary">保留由《通用规范汉字表》一级 3500 字组成的词语，用户词不受影响。输入生僻姓名、专业用字时可关闭。</string>
+	<string name="pref_chinese_fuzzy">可选模糊音</string>
+	<string name="chinese_pinyin_unresolved">没有匹配的读音。请修改拼音，或按返回取消本轮修改。</string>
+</resources>

@@ -1,0 +1,149 @@
+import java.util.zip.ZipEntry
+import java.util.zip.ZipInputStream
+import java.util.zip.ZipOutputStream
+import groovy.xml.XmlParser
+import groovy.xml.XmlNodePrinter
+
+// Run after compiling the base and matching signed feature; never embed the feature in its own base APK.
+androidComponents.onVariants(androidComponents.selector().all()) { variant ->
+	String variantName = variant.name.capitalize()
+	String flavor = variant.flavorName
+	String buildType = variant.buildType
+	def output = layout.buildDirectory.file("outputs/chinese-packs/${variant.name}/zh-simplified-pinyin.zip")
+	def featureDirectory = project(':chinese').layout.buildDirectory.dir("outputs/apk/${flavor}/${buildType}")
+	def languageOutput = layout.buildDirectory.file("outputs/chinese-ui/${variant.name}/chinese-ui.apk")
+	def stableIds = layout.buildDirectory.file("intermediates/stable_resource_ids_file/${variant.name}/process${variantName}Resources/stableIds.txt")
+	def translations = rootProject.file('chinese/translations/zh-CN.xml')
+	def signingConfig = { -> android.buildTypes.getByName(buildType).signingConfig
+		?: android.productFlavors.getByName(flavor).signingConfig ?: android.defaultConfig.signingConfig }
+	def languageTask = tasks.register("build${variantName}ChineseUiSplit") {
+		dependsOn "process${variantName}Resources"
+		inputs.file(translations)
+		inputs.file(stableIds)
+		inputs.property('applicationId', variant.applicationId)
+		inputs.property('versionCode', variant.outputs.first().versionCode)
+		inputs.file(providers.provider { signingConfig()?.storeFile }).optional()
+		inputs.property('signingAlias', providers.provider { signingConfig()?.keyAlias ?: '' })
+		outputs.file(languageOutput)
+		doLast {
+			File generated = layout.buildDirectory.dir("generated/chinese-ui/${variant.name}").get().asFile
+			delete(generated)
+			File res = new File(generated, 'res')
+			File compiled = new File(generated, 'compiled')
+			new File(res, 'values').mkdirs()
+			new File(res, 'values-zh-rCN').mkdirs()
+			compiled.mkdirs()
+			Map<String, String> ids = [:]
+			stableIds.get().asFile.eachLine('UTF-8') { line ->
+				def match = line =~ /^\S+:string\/(\w+)\s*=\s*(0x[0-9a-fA-F]+)$/
+				if (match.matches()) ids[match[0][1]] = match[0][2].toLowerCase()
+			}
+			Node localized = new Node(null, 'resources')
+			Node defaults = new Node(null, 'resources')
+			new XmlParser(false, false).parse(translations).children().each { node ->
+				if (node instanceof Node && node.name() == 'string' && ids.containsKey(node.attribute('name'))) {
+					localized.append((Node) node.clone())
+					new Node(defaults, 'string', [name: node.attribute('name')], 'placeholder')
+				}
+			}
+			if (localized.children().isEmpty()) throw new GradleException('No Chinese UI translations match the base resource IDs')
+			writeChineseXml(new File(res, 'values/strings.xml'), defaults)
+			writeChineseXml(new File(res, 'values-zh-rCN/strings.xml'), localized)
+			Node manifest = new Node(null, 'manifest', ['xmlns:android': 'http://schemas.android.com/apk/res/android',
+				package: variant.applicationId.get(), 'android:versionCode': variant.outputs.first().versionCode.get().toString()])
+			new Node(manifest, 'uses-sdk', ['android:minSdkVersion': '24', 'android:targetSdkVersion': android.defaultConfig.targetSdk.toString()])
+			new Node(manifest, 'application', ['android:hasCode': 'false'])
+			File manifestFile = new File(generated, 'AndroidManifest.xml')
+			writeChineseXml(manifestFile, manifest)
+			File sdk = androidComponents.sdkComponents.sdkDirectory.get().asFile
+			String executable = System.getProperty('os.name').toLowerCase().contains('windows') ? 'aapt2.exe' : 'aapt2'
+			File aapt = new File(sdk, "build-tools/${android.buildToolsVersion}/${executable}")
+			File androidJar = androidComponents.sdkComponents.bootClasspath.get().find { it.asFile.name == 'android.jar' }.asFile
+			providers.exec { commandLine aapt, 'compile', '--dir', res, '-o', compiled }.result.get()
+			File unsigned = new File(generated, 'config.zh.apk')
+			providers.exec {
+				commandLine aapt, 'link', '-o', new File(generated, 'holder-do-not-install.apk'), '--manifest', manifestFile,
+					'-I', androidJar, '--stable-ids', stableIds.get().asFile, '--package-id', '0x7f', '--split', "${unsigned};zh-rCN",
+					new File(compiled, 'values_strings.arsc.flat'), new File(compiled, 'values-zh-rCN_strings.arsc.flat')
+			}.result.get()
+			String dump = providers.exec { commandLine aapt, 'dump', 'resources', unsigned }.standardOutput.asText.get()
+			def resources = dump =~ /resource (0x[0-9a-f]+) string\/(\w+)/
+			if (resources.size() != localized.children().size() || dump.contains('placeholder')) throw new GradleException('Incomplete Chinese UI split')
+			resources.each { entry -> if (ids[entry[2]] != entry[1]) throw new GradleException("Chinese UI resource ID mismatch: ${entry[2]}") }
+			def signing = signingConfig()
+			if (signing == null || signing.storeFile == null) throw new GradleException('Configure the base signingConfig before packaging its Chinese extension')
+			File signed = languageOutput.get().asFile
+			signed.parentFile.mkdirs()
+			File java = new File(System.getProperty('java.home'), "bin/${executable.endsWith('.exe') ? 'java.exe' : 'java'}")
+			File signer = new File(sdk, "build-tools/${android.buildToolsVersion}/lib/apksigner.jar")
+			providers.exec {
+				environment 'TT9_CHINESE_STORE_PASS', signing.storePassword ?: ''
+				environment 'TT9_CHINESE_KEY_PASS', signing.keyPassword ?: ''
+				commandLine java, '-jar', signer, 'sign', '--ks', signing.storeFile, '--ks-key-alias', signing.keyAlias,
+					'--ks-pass', 'env:TT9_CHINESE_STORE_PASS', '--key-pass', 'env:TT9_CHINESE_KEY_PASS',
+					'--min-sdk-version', '24', '--v1-signing-enabled', 'true', '--v2-signing-enabled', 'true',
+					'--v3-signing-enabled', 'true', '--v4-signing-enabled', 'false', '--out', signed, unsigned
+			}.result.get()
+			logger.lifecycle("Signed Chinese UI configuration split: ${signed} (${localized.children().size()} translations)")
+		}
+	}
+	tasks.register("package${variantName}ChinesePack") {
+		dependsOn buildDictionaryDownloads, buildChinesePrefixIndex, copyNgramsToDownloads,
+			"assemble${variantName}", ":chinese:assemble${variantName}", languageTask
+		inputs.file(new File(DICTIONARIES_DOWNLOAD_DIR, 'zh-simplified-pinyin.zip'))
+		inputs.file(file('languages/chinese/common-3500.txt'))
+		inputs.file(file('languages/chinese/UNICODE-LICENSE.txt'))
+		inputs.files(DictionaryTools.getDictionaryNotices(file('languages/dictionaries/zh-simplified-pinyin.csv')).values())
+		inputs.file(chinesePrefixIndexFile)
+		inputs.file(languageOutput)
+		inputs.files(featureDirectory.map { directory -> fileTree(directory).matching { include '*.apk' } })
+		outputs.file(output)
+		doLast {
+			List<File> featureApks = fileTree(featureDirectory).matching { include '*.apk' }.files.toList()
+			if (featureApks.size() != 1) throw new GradleException("Expected one signed Chinese feature APK in ${featureDirectory.get().asFile}")
+			File pack = output.get().asFile
+			pack.parentFile.mkdirs()
+			pack.withOutputStream { raw ->
+				ZipOutputStream zip = new ZipOutputStream(raw)
+				new File(DICTIONARIES_DOWNLOAD_DIR, 'zh-simplified-pinyin.zip').withInputStream { dictionary ->
+					ZipInputStream input = new ZipInputStream(dictionary)
+					ZipEntry entry = input.nextEntry
+					if (entry == null || entry.directory) throw new GradleException('Missing Chinese dictionary entry')
+					writeChinesePackEntry(zip, entry.name, input)
+					Set<String> requiredNotices = DictionaryTools.getDictionaryNotices(file('languages/dictionaries/zh-simplified-pinyin.csv')).keySet()
+					Set<String> copiedNotices = new HashSet<>()
+					while ((entry = input.nextEntry) != null) {
+						if (requiredNotices.contains(entry.name) && copiedNotices.add(entry.name)) writeChinesePackEntry(zip, entry.name, input)
+					}
+					if (copiedNotices != requiredNotices) throw new GradleException('Missing Chinese dictionary data notices')
+				}
+				[
+					'chinese/common-3500.txt': file('languages/chinese/common-3500.txt'),
+					'chinese/UNICODE-LICENSE.txt': file('languages/chinese/UNICODE-LICENSE.txt'),
+					'chinese/zh-simplified-prefixes.bin': chinesePrefixIndexFile.get().asFile,
+					'chinese/chinese.apk': featureApks[0],
+					'chinese/chinese-ui.apk': languageOutput.get().asFile
+				].each { name, source -> source.withInputStream { input -> writeChinesePackEntry(zip, name, input) } }
+				zip.close()
+			}
+			logger.lifecycle("Chinese dictionary + signed feature pack: ${pack} (${pack.length()} bytes)")
+		}
+	}
+}
+
+static void writeChineseXml(File file, Node node) {
+	file.withWriter('UTF-8') { writer ->
+		XmlNodePrinter printer = new XmlNodePrinter(new PrintWriter(writer))
+		printer.preserveWhitespace = true
+		printer.print(node)
+	}
+}
+
+static void writeChinesePackEntry(ZipOutputStream zip, String name, InputStream input) {
+	ZipEntry entry = new ZipEntry(name)
+	entry.time = 0
+	zip.putNextEntry(entry)
+	byte[] buffer = new byte[16384]
+	for (int size; (size = input.read(buffer)) != -1;) zip.write(buffer, 0, size)
+	zip.closeEntry()
+}

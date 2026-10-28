@@ -10,6 +10,7 @@ import io.github.sspanak.tt9.preferences.PreferencesActivity;
 import io.github.sspanak.tt9.preferences.custom.EnhancedDropDownPreference;
 import io.github.sspanak.tt9.preferences.items.ItemSwitch;
 import io.github.sspanak.tt9.preferences.screens.ScreenWithPreviewKeyboardHeaderFragment;
+import io.github.sspanak.tt9.preferences.screens.chinese.ChineseSettingsProfile;
 import io.github.sspanak.tt9.preferences.settings.SettingsStore;
 
 public class AppearanceScreen extends ScreenWithPreviewKeyboardHeaderFragment {
@@ -30,6 +31,8 @@ public class AppearanceScreen extends ScreenWithPreviewKeyboardHeaderFragment {
 		createHacksSection();
 		enablePreviewOnChange();
 		resetFontSize(true);
+		Preference chinese = findPreference("screen_chinese_settings");
+		if (chinese != null) chinese.setVisible(false);
 	}
 
 
@@ -39,6 +42,14 @@ public class AppearanceScreen extends ScreenWithPreviewKeyboardHeaderFragment {
 		DropDownColorScheme colorScheme = findPreference(DropDownColorScheme.NAME);
 		if (colorScheme != null && activity != null) {
 			colorScheme.populate(activity.getSettings());
+		}
+		if (activity != null) {
+			ChineseSettingsProfile.checkAvailable(activity, activity.getSettings(), installed -> {
+				if (!isAdded()) return;
+				Preference chinese = findPreference("screen_chinese_settings");
+				if (chinese != null) chinese.setVisible(installed);
+				resetFontSize(true);
+			});
 		}
 	}
 

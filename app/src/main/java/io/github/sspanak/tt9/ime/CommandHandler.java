@@ -10,6 +10,7 @@ import io.github.sspanak.tt9.ime.modes.InputModeKind;
 import io.github.sspanak.tt9.languages.LanguageCollection;
 import io.github.sspanak.tt9.languages.NaturalLanguage;
 import io.github.sspanak.tt9.ui.UI;
+import io.github.sspanak.tt9.util.Logger;
 import io.github.sspanak.tt9.util.Ternary;
 
 abstract public class CommandHandler extends TextEditingHandler {
@@ -94,9 +95,14 @@ abstract public class CommandHandler extends TextEditingHandler {
 
 
 	public void setLang(int langId) {
+		// Commands and the language dialog read the current preferences, so validate against
+		// the same list even if the IME has not restarted since the languages were changed.
+		mEnabledLanguages = settings.getEnabledLanguageIds();
 		if (!mEnabledLanguages.contains(langId)) {
+			Logger.d("setLang", "Ignoring disabled language: " + langId + "; enabled: " + mEnabledLanguages);
 			return;
 		}
+		Logger.d("setLang", "Changing language: " + (mLanguage != null ? mLanguage.getId() : -1) + " -> " + langId + "; enabled: " + mEnabledLanguages);
 
 		suggestionOps.cancelDelayedAccept();
 		stopVoiceInput();
@@ -111,6 +117,7 @@ abstract public class CommandHandler extends TextEditingHandler {
 		mInputMode = InputMode
 			.getInstance(settings, mLanguage, inputType, textField, determineInputModeId())
 			.copy(mInputMode);
+		Logger.d("setLang", "Selected language: " + mLanguage.getId() + "; mode: " + mInputMode.getId() + "; allowed modes: " + allowedInputModes);
 
 		if (mInputMode.isTyping()) {
 			getSuggestions(0, null, this::onAfterLanguageChange);

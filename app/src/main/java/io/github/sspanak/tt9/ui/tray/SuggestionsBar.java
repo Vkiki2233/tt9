@@ -6,13 +6,16 @@ import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.os.Handler;
 import android.os.Looper;
+import android.text.TextPaint;
 import android.view.View;
+import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.DividerItemDecoration;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -56,6 +59,9 @@ public class SuggestionsBar {
 	@NonNull private final Runnable onItemLongClick;
 	@Nullable private final RecyclerView mView;
 	private final SettingsStore settings;
+	private final ResizableMainView mainView;
+	@Nullable private PackedCandidateNavigation expandedNavigation;
+	private int collapsedWrapperHeight;
 	private SuggestionsAdapter mSuggestionsAdapter;
 	private Vibration vibration;
 
@@ -66,6 +72,7 @@ public class SuggestionsBar {
 		this.onItemClick = onItemClick;
 		this.onItemLongClick = onItemLongClick;
 		this.settings = settings;
+		this.mainView = mainView;
 
 		mView = mainView.getView() != null ? mainView.getView().findViewById(R.id.suggestions_bar) : null;
 		if (mView != null) {
@@ -139,14 +146,17 @@ public class SuggestionsBar {
 
 		separatorDrawable.setColorFilter(suggestionSeparatorColor, PorterDuff.Mode.SRC_ATOP);
 
-		DividerItemDecoration separator = new DividerItemDecoration(mView.getContext(), RecyclerView.HORIZONTAL);
-		separator.setDrawable(separatorDrawable);
-
 		int decorations = mView.getItemDecorationCount();
 		if (decorations > 0) {
 			mView.removeItemDecorationAt(decorations - 1);
 		}
-		mView.addItemDecoration(separator);
+		if (isExpanded()) {
+			mView.addItemDecoration(new CandidateSeparators(separatorDrawable));
+		} else {
+			DividerItemDecoration separator = new DividerItemDecoration(mView.getContext(), RecyclerView.HORIZONTAL);
+			separator.setDrawable(separatorDrawable);
+			mView.addItemDecoration(separator);
+		}
 	}
 
 
@@ -174,6 +184,104 @@ public class SuggestionsBar {
 
 	public int getCurrentIndex() {
 		return selectedIndex;
+	}
+
+	public boolean isExpanded() {
+		return expandedNavigation != null;
+	}
+
+	public boolean expand() {
+		if (mView == null || mView.getVisibility() != View.VISIBLE || suggestions == null || suggestions.size() < 2 || isExpanded()) {
+			return false;
+		}
+
+		float density = mView.getResources().getDisplayMetrics().density;
+		int width = Math.max(1, mView.getWidth() - mView.getPaddingLeft() - mView.getPaddingRight());
+		boolean compact = settings.getChineseCandidateCompact();
+		float baseTextSize = mView.getResources().getDimension(R.dimen.status_bar_text_size);
+		float textSize = baseTextSize * settings.getSuggestionFontScale();
+		int rowHeight = Math.round(Math.max(compact ? 24 * density : 44 * density, textSize * 1.45f));
+		int padding = mView.getResources().getDimensionPixelSize(R.dimen.main_small_suggestion_spacing_horizontal);
+		// Materialize the same list used by the one-line bar, including candidates past (...).
+		visibleSuggestions.clear();
+		if (containsStem()) {
+			visibleSuggestions.add(stem + STEM_SUFFIX);
+		}
+		addManyVisible(suggestions, Integer.MAX_VALUE);
+		TextPaint paint = new TextPaint();
+		paint.setTextSize(textSize);
+		boolean numbered = settings.getChineseNumberSelect();
+		int numberWidth = numbered ? (int) Math.ceil(paint.measureText("9 ") * 0.65f) : 0;
+		int separatorWidth = Math.round(density);
+		int[] widths = new int[visibleSuggestions.size()];
+		for (int i = 0; i < widths.length; i++) {
+			widths[i] = (int) Math.ceil(paint.measureText(visibleSuggestions.get(i))) + numberWidth + padding * 2 + separatorWidth;
+		}
+		expandedNavigation = new PackedCandidateNavigation(widths, width, numbered ? 9 : 0);
+		int maxRows = Math.max(1, (int) (mView.getResources().getDisplayMetrics().heightPixels * 0.4f / rowHeight));
+		int rows = Math.min(expandedNavigation.getRowCount(), Math.min(compact ? 6 : 4, maxRows));
+		int expandedHeight = rowHeight * rows;
+		View wrapper = (View) mView.getParent();
+		ViewGroup.LayoutParams params = wrapper.getLayoutParams();
+		collapsedWrapperHeight = params.height;
+		int extraHeight = Math.max(0, expandedHeight - wrapper.getHeight());
+		params.height = expandedHeight;
+		wrapper.setLayoutParams(params);
+		displayHandler.removeCallbacksAndMessages(null);
+		mSuggestionsAdapter.setGridLayout(expandedNavigation, rowHeight, padding, baseTextSize, separatorWidth, numbered);
+		GridLayoutManager layout = new GridLayoutManager(mView.getContext(), width);
+		layout.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
+			@Override public int getSpanSize(int position) {
+				return expandedNavigation != null ? expandedNavigation.getSpanSize(position) : 1;
+			}
+		});
+		mView.setLayoutManager(layout);
+		mView.setVerticalScrollBarEnabled(true);
+		initSeparator(mView.getContext());
+		mainView.setSuggestionPanelExtraHeight(extraHeight);
+		render();
+		mView.scrollToPosition(selectedIndex);
+		return true;
+	}
+
+	public boolean collapse() {
+		if (mView == null || !isExpanded()) {
+			return false;
+		}
+		expandedNavigation = null;
+		displayHandler.removeCallbacksAndMessages(null);
+		View wrapper = (View) mView.getParent();
+		ViewGroup.LayoutParams params = wrapper.getLayoutParams();
+		params.height = collapsedWrapperHeight;
+		wrapper.setLayoutParams(params);
+		mSuggestionsAdapter.setGridLayout(null, 0, 0, 0, 0, false);
+		mView.setLayoutManager(new LinearLayoutManager(mView.getContext(), RecyclerView.HORIZONTAL, false));
+		mView.setVerticalScrollBarEnabled(false);
+		initSeparator(mView.getContext());
+		mainView.setSuggestionPanelExtraHeight(0);
+		// Keep the full list and selection: a deep candidate must still commit after collapse.
+		render();
+		return true;
+	}
+
+	public boolean selectNumbered(int number) {
+		if (!isExpanded()) return false;
+		int index = mSuggestionsAdapter.getNumberedIndex(number);
+		if (index < 0) return false;
+		mSuggestionsAdapter.setSelection(selectedIndex = index);
+		return true;
+	}
+
+	public void moveInGrid(int horizontal, int vertical, boolean collapseAtTop) {
+		if (!isExpanded()) {
+			return;
+		}
+		if (collapseAtTop && vertical < 0 && expandedNavigation.getRow(selectedIndex) == 0) {
+			collapse();
+			return;
+		}
+		selectedIndex = expandedNavigation.move(selectedIndex, horizontal, vertical);
+		scrollToSelected();
 	}
 
 
@@ -270,6 +378,7 @@ public class SuggestionsBar {
 
 
 	public void setMany(@Nullable List<String> newSuggestions, int initialSel, boolean containsGenerated) {
+		collapse();
 		if ((suggestions == null || suggestions.isEmpty()) && (newSuggestions == null || newSuggestions.isEmpty())) {
 			return;
 		}
@@ -380,7 +489,7 @@ public class SuggestionsBar {
 			setBackground(false);
 			mSuggestionsAdapter.setTextSize(settings.getSuggestionFontScale());
 
-			boolean smooth = settings.getSuggestionSmoothScroll() && visibleSuggestions.size() <= SettingsStore.SUGGESTIONS_MAX + 1;
+			boolean smooth = !isExpanded() && settings.getSuggestionSmoothScroll() && visibleSuggestions.size() <= SettingsStore.SUGGESTIONS_MAX + 1;
 			mView.setItemAnimator(smooth ? animator : null);
 		}
 
@@ -481,7 +590,7 @@ public class SuggestionsBar {
 			return;
 		}
 
-		boolean smooth = settings.getSuggestionSmoothScroll() && Math.abs(selectedIndex - lastScrollIndex) < SettingsStore.SUGGESTIONS_MAX;
+		boolean smooth = !isExpanded() && settings.getSuggestionSmoothScroll() && Math.abs(selectedIndex - lastScrollIndex) < SettingsStore.SUGGESTIONS_MAX;
 		mView.setItemAnimator(smooth ? animator : null);
 		mView.scrollToPosition(containsStem() && selectedIndex == 1 ? 0 : selectedIndex);
 		lastScrollIndex = selectedIndex;

@@ -12,6 +12,12 @@
 		<io.github.sspanak.tt9.preferences.screens.appearance.DropDownLayoutType app:title="@string/pref_layout" />
 		<io.github.sspanak.tt9.preferences.screens.appearance.SwitchDragResize />
 		<io.github.sspanak.tt9.preferences.screens.appearance.SwitchDoubleTapResize />
+		<Preference
+			app:fragment="io.github.sspanak.tt9.preferences.screens.chinese.ChineseSettingsScreen"
+			app:key="screen_chinese_settings"
+			app:title="@string/pref_chinese_settings"
+			app:summary="@string/pref_chinese_settings_summary"
+			app:isPreferenceVisible="false" />
 	</PreferenceCategory>
 
 	<PreferenceCategory app:key="category_keyboard_geometry" app:title="@string/pref_category_geometry">

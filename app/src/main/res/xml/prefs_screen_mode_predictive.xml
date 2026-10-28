@@ -3,6 +3,7 @@
 	<SwitchPreferenceCompat
 		android:defaultValue="true"
 		android:key="pref_predictive_mode"
+		android:summary="@string/pref_predictive_mode_summary"
 		android:title="@string/pref_category_predictive_mode" />
 
 	<SwitchPreferenceCompat

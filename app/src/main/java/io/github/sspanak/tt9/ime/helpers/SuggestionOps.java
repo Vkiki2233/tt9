@@ -53,6 +53,7 @@ public class SuggestionOps {
 
 	public void setLanguage(@Nullable Language newLanguage) {
 		if (suggestionBar != null) {
+			suggestionBar.collapse();
 			suggestionBar.setRTL(LanguageKind.isRTL(newLanguage));
 		}
 	}
@@ -156,6 +157,31 @@ public class SuggestionOps {
 	public void scrollTo(int index) {
 		if (suggestionBar != null) {
 			suggestionBar.scrollToSuggestion(index);
+		}
+	}
+
+	public boolean isExpanded() {
+		return suggestionBar != null && suggestionBar.isExpanded();
+	}
+
+	public boolean expand() {
+		cancelDelayedAccept();
+		return suggestionBar != null && suggestionBar.expand();
+	}
+
+	public boolean collapse() {
+		return suggestionBar != null && suggestionBar.collapse();
+	}
+
+	public boolean selectNumbered(int number) {
+		cancelDelayedAccept();
+		return suggestionBar != null && suggestionBar.selectNumbered(number);
+	}
+
+	public void moveInGrid(int horizontal, int vertical, boolean collapseAtTop) {
+		cancelDelayedAccept();
+		if (suggestionBar != null) {
+			suggestionBar.moveInGrid(horizontal, vertical, collapseAtTop);
 		}
 	}
 

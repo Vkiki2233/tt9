@@ -162,6 +162,31 @@ public class SettingsUI extends SettingsTyping {
 		);
 	}
 
+	public boolean getChineseCandidateCompact() {
+		return prefs.getBoolean("pref_chinese_candidate_compact", true);
+	}
+
+	public boolean getChinesePrefixCompletion() { return prefs.getBoolean("pref_chinese_prefix_completion", true); }
+	public boolean getChineseCommonOnly() { return prefs.getBoolean("pref_chinese_common_only", false); }
+	public boolean getChineseNumberSelect() { return prefs.getBoolean("pref_chinese_number_select", true); }
+	public int getChineseFuzzyOptions() {
+		int options = 0;
+		String[] keys = {"nl", "z_zh", "c_ch", "s_sh", "en_eng", "in_ing"};
+		for (int i = 0; i < keys.length; i++) if (prefs.getBoolean("pref_chinese_fuzzy_" + keys[i], false)) options |= 1 << i;
+		return options;
+	}
+
+	public void clearChineseSettings() {
+		android.content.SharedPreferences.Editor editor = getPrefsEditor();
+		for (String key : prefs.getAll().keySet()) if (key.startsWith("pref_chinese_")) editor.remove(key);
+		editor.remove("pref_interface_language").apply();
+	}
+
+	public String getInterfaceLanguage() {
+		String language = prefs.getString("pref_interface_language", "auto");
+		return "en".equals(language) || "zh-CN".equals(language) ? language : "auto";
+	}
+
 	public boolean getSuggestionSmoothScroll() {
 		return prefs.getBoolean("pref_suggestion_smooth_scroll", !DeviceInfo.noTouchScreen(context));
 	}

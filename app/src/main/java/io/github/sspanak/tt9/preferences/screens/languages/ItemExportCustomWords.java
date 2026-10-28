@@ -7,10 +7,10 @@ import io.github.sspanak.tt9.db.customWords.CustomWordsExporter;
 import io.github.sspanak.tt9.preferences.PreferencesActivity;
 import io.github.sspanak.tt9.preferences.items.ItemExportAbstract;
 
-class ItemExportCustomWords extends ItemExportAbstract {
+public class ItemExportCustomWords extends ItemExportAbstract {
 	final public static String NAME = "dictionary_export_custom";
 
-	ItemExportCustomWords(Preference item, PreferencesActivity activity, Runnable onStart, Runnable onFinish) {
+	public ItemExportCustomWords(Preference item, PreferencesActivity activity, Runnable onStart, Runnable onFinish) {
 		super(item, activity, onStart, onFinish);
 	}
 

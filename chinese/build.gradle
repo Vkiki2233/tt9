@@ -1,0 +1,32 @@
+plugins {
+	id 'com.android.dynamic-feature'
+}
+
+android {
+	namespace = 'io.github.sspanak.tt9.chinese'
+	compileSdk = 37
+	defaultConfig { minSdk = 24 }
+	compileOptions {
+		sourceCompatibility JavaVersion.VERSION_17
+		targetCompatibility JavaVersion.VERSION_17
+	}
+	flavorDimensions = ['app']
+	productFlavors {
+		full { dimension 'app' }
+		lite { dimension 'app' }
+		premium { dimension 'app' }
+	}
+	testOptions.unitTests.returnDefaultValues = true
+	testOptions.unitTests.all {
+		systemProperty 'tt9.commonHanTable', rootProject.file('app/languages/chinese/common-3500.txt').absolutePath
+		systemProperty 'tt9.chinesePrefixIndex', project(':app').chinesePrefixIndexFile.get().asFile.absolutePath
+		dependsOn ':app:buildChinesePrefixIndex'
+	}
+}
+
+dependencies {
+	implementation project(':app')
+	compileOnly 'androidx.preference:preference:1.2.1'
+	compileOnly 'com.google.android.material:material:1.14.0'
+	testImplementation 'junit:junit:4.13.2'
+}

@@ -65,6 +65,7 @@
 	<string name="pref_category_keypad_onscreen">On-Screen Keys</string>
 	<string name="pref_category_layout">On-screen Layout</string>
 	<string name="pref_category_predictive_mode">Predictive Mode</string>
+	<string name="pref_predictive_mode_summary">Chinese Pinyin and Bopomofo conversion stays available when this is off.</string>
 	<string name="pref_category_setup">Initial Setup</string>
 	<string name="pref_category_typing">Typing</string>
 	<string name="pref_category_unfolded_appearance">Unfolded Appearance</string>
@@ -171,6 +172,8 @@
 	<string name="pref_suggestion_smooth_scroll">Smooth Suggestion Scrolling</string>
 	<string name="pref_upside_down_keys">Reverse Key Order</string>
 	<string name="pref_upside_down_keys_summary">For computer numpads with 7–8–9 on the first row, instead of 1–2–3.</string>
+	<string name="pref_swap_star_pound">Swap * and # Functions</string>
+	<string name="pref_swap_star_pound_summary">Exchange both short-press and long-press functions. Turn off to restore the original assignments.</string>
 
 	<!-- Colors -->
 	<string name="pref_color_scheme">Theme</string>

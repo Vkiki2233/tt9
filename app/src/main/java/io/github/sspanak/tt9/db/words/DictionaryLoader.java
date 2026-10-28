@@ -2,6 +2,9 @@ package io.github.sspanak.tt9.db.words;
 
 import android.content.Context;
 import android.inputmethodservice.InputMethodService;
+import android.net.Uri;
+import android.os.Handler;
+import android.os.Looper;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -12,6 +15,7 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.function.Consumer;
 
 import io.github.sspanak.tt9.db.DataStore;
 import io.github.sspanak.tt9.db.entities.WordBatch;
@@ -23,6 +27,9 @@ import io.github.sspanak.tt9.db.sqlite.InsertOps;
 import io.github.sspanak.tt9.db.sqlite.SQLiteOpener;
 import io.github.sspanak.tt9.db.sqlite.Tables;
 import io.github.sspanak.tt9.db.sqlite.WordDbOpener;
+import io.github.sspanak.tt9.ime.helpers.InputModePolicy;
+import io.github.sspanak.tt9.extensions.ChinesePack;
+import io.github.sspanak.tt9.extensions.ChinesePackInstaller;
 import io.github.sspanak.tt9.languages.Language;
 import io.github.sspanak.tt9.languages.LanguageKind;
 import io.github.sspanak.tt9.languages.NaturalLanguage;
@@ -49,11 +56,16 @@ public class DictionaryLoader {
 	@NonNull private static final HashMap<Integer, Long> lastAutoLoadAttemptTime = new HashMap<>();
 	private static boolean skipNextAutoLoad = false;
 	private int currentFile = 0;
+	@Nullable private final Uri localSource;
+	@Nullable private final Consumer<Boolean> onComplete;
+	private boolean importSuccessful;
 
 
-	private DictionaryLoader(Context context) {
+	private DictionaryLoader(Context context, @Nullable Uri source, @Nullable Consumer<Boolean> onComplete) {
 		loadingBar = DictionaryLoadingBar.getInstance(context);
 		sqlite = WordDbOpener.getInstance(context);
+		localSource = source;
+		this.onComplete = onComplete;
 	}
 
 
@@ -66,6 +78,10 @@ public class DictionaryLoader {
 
 
 	public static boolean load(@NonNull Context context, @NonNull SettingsStore settings, @Nullable ArrayList<Language> languages) {
+		return load(context, settings, languages, null, null);
+	}
+
+	private static boolean load(@NonNull Context context, @NonNull SettingsStore settings, @Nullable ArrayList<Language> languages, @Nullable Uri source, @Nullable Consumer<Boolean> onComplete) {
 		if (isRunning()) {
 			return false;
 		}
@@ -76,17 +92,19 @@ public class DictionaryLoader {
 		}
 
 		if (self == null) {
-			self = new DictionaryLoader(context);
+			self = new DictionaryLoader(context, source, onComplete);
 		}
-		self.loadThread = new Thread(() -> {
+		DictionaryLoader loader = self;
+		loader.loadThread = new Thread(() -> {
 			try {
-				self.loadSync(context, settings, languages);
+				loader.loadSync(context, settings, languages);
 			} finally {
-				self.loadThread = null;
+				loader.loadThread = null;
 				self = null;
+				if (loader.onComplete != null) new Handler(Looper.getMainLooper()).post(() -> loader.onComplete.accept(loader.importSuccessful));
 			}
 		});
-		self.loadThread.start();
+		loader.loadThread.start();
 
 		return true;
 	}
@@ -98,9 +116,15 @@ public class DictionaryLoader {
 		load(context, settings, languages);
 	}
 
+	public static boolean loadChinesePack(@NonNull Context context, @NonNull SettingsStore settings, @NonNull Language language, @NonNull Uri source, @NonNull Consumer<Boolean> onComplete) {
+		ArrayList<Language> languages = new ArrayList<>(1);
+		languages.add(language);
+		return LanguageKind.isChinesePinyin(language) && load(context, settings, languages, source, onComplete);
+	}
+
 
 	public static boolean autoLoad(@NonNull InputMethodService context, @NonNull SettingsStore settings, @NonNull Language language) {
-		if (!settings.getPredictiveMode() || isRunning()) {
+		if (!InputModePolicy.isDictionaryEnabled(language, settings.getPredictiveMode()) || isRunning()) {
 			return false;
 		}
 
@@ -122,6 +146,9 @@ public class DictionaryLoader {
 				final boolean noDictionary = hash == null || hash.isEmpty();
 				final boolean isDictionaryOutdated = noDictionary || !hash.equals(new WordFile(context, language, context.getAssets()).getHash());
 				final boolean noNotifications = DeviceInfo.AT_LEAST_ANDROID_13;
+				if (LanguageKind.isChinesePinyin(language) && (!ChinesePack.isDataAvailable(context) || !ChinesePackInstaller.isInstalled(context))) {
+					ChinesePackInstaller.offerMissingPack(context);
+				}
 
 				if (noDictionary || (isDictionaryOutdated && noNotifications)) {
 					load(context, settings, language);
@@ -181,6 +208,7 @@ public class DictionaryLoader {
 			return;
 		}
 
+		ChinesePack.Prepared pack = null;
 		try {
 			Timer.start(LOG_TAG);
 
@@ -203,7 +231,7 @@ public class DictionaryLoader {
 			sendProgressMessage(language, ++progress);
 			logLoadingStep("Letters imported", language, Timer.restart());
 
-			importWordFile(context, language, lettersCount, progress, 88);
+			pack = importWordFile(context, language, lettersCount, progress, 88);
 			progress = 88;
 			sendProgressMessage(language, progress);
 			logLoadingStep("Dictionary file imported", language, Timer.restart());
@@ -223,7 +251,16 @@ public class DictionaryLoader {
 			sendProgressMessage(language, ++progress);
 			logLoadingStep("Custom words restored", language, Timer.restart());
 
+			if (pack != null) pack.activate();
 			sqlite.finishTransaction();
+			importSuccessful = true;
+			if (pack != null) {
+				pack.confirm();
+				ChinesePackInstaller.dictionaryInstalled(context);
+			}
+			if (LanguageKind.isChinesePinyin(language) && (!ChinesePack.isDataAvailable(context) || !ChinesePackInstaller.isInstalled(context))) {
+				ChinesePackInstaller.offerMissingPack(context);
+			}
 			SlowQueryStats.clear();
 		} catch (DictionaryImportAbortedException e) {
 			sqlite.failTransaction();
@@ -261,6 +298,11 @@ public class DictionaryLoader {
 				+ e.getMessage()
 			);
 		} finally {
+			if (pack != null) {
+				try { pack.close(); } catch (IOException exception) {
+					Logger.e(LOG_TAG, "Failed restoring Chinese pack: " + exception.getMessage());
+				}
+			}
 			Timer.stop(LOG_TAG);
 		}
 	}
@@ -289,8 +331,8 @@ public class DictionaryLoader {
 	}
 
 
-	private void importWordFile(Context context, Language language, int positionShift, float minProgress, float maxProgress) throws Exception {
-		WordFile wordFile = new WordFile(context, language, context.getAssets());
+	private ChinesePack.Prepared importWordFile(Context context, Language language, int positionShift, float minProgress, float maxProgress) throws Exception {
+		WordFile wordFile = new WordFile(context, language, context.getAssets(), localSource);
 		WordBatch batch = new WordBatch(language, SettingsStore.DICTIONARY_IMPORT_BATCH_SIZE + 1);
 		float progressRatio = (maxProgress - minProgress) / wordFile.getWords();
 		int wordCount = 0;
@@ -319,10 +361,10 @@ public class DictionaryLoader {
 
 				sendProgressMessage(language, minProgress + progressRatio * wordCount);
 			}
+			saveWordBatch(batch);
+			InsertOps.replaceLanguageMeta(sqlite.getDb(), language.getId(), wordFile.getHash());
+			return wordFile.stageChinesePack();
 		}
-
-		saveWordBatch(batch);
-		InsertOps.replaceLanguageMeta(sqlite.getDb(), language.getId(), wordFile.getHash());
 	}
 
 

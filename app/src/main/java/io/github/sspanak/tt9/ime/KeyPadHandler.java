@@ -20,6 +20,11 @@ abstract class KeyPadHandler extends UiHandler {
 
 	private int lastNumKeyCode = 0;
 	private int numKeyRepeatCounter = 0;
+	private int repeatedCandidateArrow = 0;
+	private boolean repeatingCandidateArrow;
+
+	protected boolean isCandidateArrowRepeating() { return repeatingCandidateArrow; }
+	protected boolean canRepeatCandidateArrow(int keyCode) { return false; }
 
 
 	/**
@@ -57,6 +62,15 @@ abstract class KeyPadHandler extends UiHandler {
 		}
 
 //		Logger.d("onKeyDown", "Key: " + event + " repeat?: " + event.getRepeatCount() + " long-time: " + event.isLongPress());
+		if (Key.isArrow(keyCode) && canRepeatCandidateArrow(keyCode) && event.getRepeatCount() > 0) {
+			repeatedCandidateArrow = keyCode;
+			repeatingCandidateArrow = true;
+			try {
+				return onHotkey(keyCode, true, false);
+			} finally {
+				repeatingCandidateArrow = false;
+			}
+		}
 
 		// "backspace" key must repeat its function when held down, so we handle it in a special way
 		if (Key.isBackspace(settings, keyCode)) {
@@ -107,6 +121,9 @@ abstract class KeyPadHandler extends UiHandler {
 		}
 
 //		Logger.d("onLongPress", "LONG PRESS: " + keyCode);
+		if (Key.isArrow(keyCode) && canRepeatCandidateArrow(keyCode)) {
+			return true; // Native repeats navigate candidates, including arrows with a hold binding.
+		}
 
 		if (event.getRepeatCount() > 1) {
 			return true;
@@ -153,6 +170,13 @@ abstract class KeyPadHandler extends UiHandler {
 		}
 
 //		Logger.d("onKeyUp", "Key: " + keyCode + " repeat?: " + event.getRepeatCount());
+		if (keyCode == repeatedCandidateArrow) {
+			repeatedCandidateArrow = 0;
+			if (ignoreNextKeyUp == keyCode) {
+				ignoreNextKeyUp = 0;
+			}
+			return true; // Release stops a held arrow; it must not advance once more.
+		}
 
 		if (keyCode == ignoreNextKeyUp) {
 //			Logger.d("onKeyUp", "Ignored: " + keyCode);
