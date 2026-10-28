@@ -4,6 +4,21 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class CandidateKeyRepeatTest {
+	@Test public void presetsKeepCurrentFastAsSlowAndAllowTwoFasterRates() {
+		assertEquals(120, CandidateKeyRepeat.interval("slow"));
+		assertEquals(60, CandidateKeyRepeat.interval("normal"));
+		assertEquals(30, CandidateKeyRepeat.interval("fast"));
+		assertEquals(60, CandidateKeyRepeat.interval(null));
+		assertEquals(60, CandidateKeyRepeat.interval("unknown"));
+		int[] moves = new int[3];
+		String[] presets = {"slow", "normal", "fast"};
+		for (int i = 0; i < presets.length; i++) {
+			CandidateKeyRepeat gate = new CandidateKeyRepeat();
+			for (int time = 0; time <= 240; time += 30) if (gate.dispatch(22, time, CandidateKeyRepeat.interval(presets[i]))) moves[i]++;
+		}
+		assertArrayEquals(new int[]{3, 5, 9}, moves);
+	}
+
 	@Test public void rapidNativeEventsRespectSelectedInterval() {
 		CandidateKeyRepeat gate = new CandidateKeyRepeat();
 		assertTrue(gate.dispatch(22, 1000, 240));

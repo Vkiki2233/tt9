@@ -53,6 +53,11 @@ packing, row numbering, separators and navigation; the host retains only a gener
 continue to work and expanded-panel settings are absent. Held single-row navigation
 stops at either end; ordinary short taps retain cyclic selection. Native repeat
 events are rate limited without a timer that could continue after release.
+Slow/Normal/Fast use minimum native-repeat intervals of 120/60/30 milliseconds in
+both independently configured views. Expanded rows normally use the measured
+ordinary-row height. The optional, default-off Roomy candidates setting adds
+about 15% height and 2dp padding on each side. It replaces the former Compact switch;
+cached normal cell/wrapper measurements keep rapid reopen cycles stable.
 
 Seven default-off domain vocabularies ship as a 126,839-byte indexed data file in
 the Chinese download, together with licenses and provenance notices. All parser,

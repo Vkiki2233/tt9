@@ -1,6 +1,7 @@
 package io.github.sspanak.tt9.chinese;
 
 import android.graphics.drawable.Drawable;
+import android.graphics.Paint;
 import android.text.SpannableString;
 import android.text.TextPaint;
 import android.text.TextUtils;
@@ -26,6 +27,8 @@ final class ChineseExpandedCandidates implements CandidatePanel, SuggestionsAdap
 	private PackedCandidateNavigation navigation;
 	private CandidateNumbering numbering;
 	private int collapsedHeight;
+	private int ordinaryRowHeight;
+	private int ordinaryWrapperHeight;
 	private int rowHeight;
 	private int padding;
 	private int separatorWidth;
@@ -45,16 +48,17 @@ final class ChineseExpandedCandidates implements CandidatePanel, SuggestionsAdap
 	@Override public boolean expand() {
 		if (!canExpand()) return false;
 		RecyclerView view = host.view();
-		host.showAll();
 		float density = view.getResources().getDisplayMetrics().density;
 		int width = Math.max(1, view.getWidth() - view.getPaddingLeft() - view.getPaddingRight());
-		boolean compact = ChineseCandidateSettings.getCandidateCompact(settings);
+		boolean roomy = ChineseCandidateSettings.getCandidateRoomy(settings);
 		baseTextSize = view.getResources().getDimension(R.dimen.status_bar_text_size);
 		float textSize = baseTextSize * settings.getSuggestionFontScale();
-		rowHeight = Math.round(Math.max(compact ? 24 * density : 44 * density, textSize * 1.45f));
-		padding = view.getResources().getDimensionPixelSize(R.dimen.main_small_suggestion_spacing_horizontal);
+		padding = view.getResources().getDimensionPixelSize(R.dimen.main_small_suggestion_spacing_horizontal) + (roomy ? Math.round(2 * density) : 0);
 		TextPaint paint = new TextPaint();
 		paint.setTextSize(textSize);
+		int ordinaryHeight = collapsedRowHeight(view, paint);
+		rowHeight = roomy ? (int) Math.ceil(ordinaryHeight * 1.15) : ordinaryHeight;
+		host.showAll();
 		boolean numbered = ChineseCandidateSettings.getNumberSelect(settings);
 		int numberWidth = numbered ? (int) Math.ceil(paint.measureText("9 ") * 0.65f) : 0;
 		separatorWidth = Math.round(density);
@@ -65,12 +69,14 @@ final class ChineseExpandedCandidates implements CandidatePanel, SuggestionsAdap
 		navigation = new PackedCandidateNavigation(widths, width, numbered ? 9 : 0);
 		numbering = numbered ? new CandidateNumbering(navigation) : null;
 		int maxRows = Math.max(1, (int) (view.getResources().getDisplayMetrics().heightPixels * 0.4f / rowHeight));
-		int rows = Math.min(navigation.getRowCount(), Math.min(compact ? 6 : 4, maxRows));
+		int rows = Math.min(navigation.getRowCount(), Math.min(6, maxRows));
 		int height = rowHeight * rows;
 		View wrapper = (View) view.getParent();
 		ViewGroup.LayoutParams params = wrapper.getLayoutParams();
 		collapsedHeight = params.height;
-		int extraHeight = Math.max(0, height - wrapper.getHeight());
+		int normalWrapperHeight = params.height > 0 ? params.height
+			: ordinaryWrapperHeight > 0 ? ordinaryWrapperHeight : ordinaryHeight;
+		int extraHeight = Math.max(0, height - normalWrapperHeight);
 		params.height = height;
 		wrapper.setLayoutParams(params);
 		host.cancelPendingScroll();
@@ -86,6 +92,34 @@ final class ChineseExpandedCandidates implements CandidatePanel, SuggestionsAdap
 		host.render();
 		view.scrollToPosition(host.selection());
 		return true;
+	}
+
+	private int collapsedRowHeight(RecyclerView view, TextPaint paint) {
+		// Capture the ordinary row before changing the adapter or its layout manager.
+		View item = view.getChildCount() > 0 ? view.getChildAt(0) : null;
+		boolean ordinary = item != null && view.getChildViewHolder(item).getItemViewType() == 0;
+		if (ordinary && item.getHeight() > 0) {
+			ordinaryRowHeight = item.getHeight();
+			ordinaryWrapperHeight = ((View) view.getParent()).getHeight();
+		}
+		// Old grid holders can survive a rapid collapse/reopen until the next layout.
+		if (ordinaryRowHeight > 0) return ordinaryRowHeight;
+		int padding = view.getPaddingTop() + view.getPaddingBottom();
+		int height = 0;
+		if (ordinary || (item == null && !(view.getLayoutManager() instanceof GridLayoutManager))) {
+			height = (view.getHeight() > padding ? view.getHeight() : view.getMeasuredHeight()) - padding;
+		}
+		if (height <= 0) {
+			Paint.FontMetricsInt metrics = paint.getFontMetricsInt();
+			height = settings.isMainLayoutNumpad() ? view.getResources().getDimensionPixelSize(R.dimen.numpad_suggestion_height)
+				: Math.max(1, metrics.bottom - metrics.top);
+		}
+		ordinaryRowHeight = height;
+		View wrapper = (View) view.getParent();
+		int fixedHeight = wrapper.getLayoutParams().height;
+		ordinaryWrapperHeight = fixedHeight > 0 ? fixedHeight
+			: height + padding + wrapper.getPaddingTop() + wrapper.getPaddingBottom();
+		return ordinaryRowHeight;
 	}
 
 	@Override public boolean collapse() {

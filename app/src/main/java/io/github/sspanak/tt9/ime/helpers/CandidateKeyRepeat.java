@@ -5,6 +5,12 @@ public final class CandidateKeyRepeat {
 	private int key;
 	private long lastDispatch;
 
+	/** Shared speed labels have the same cadence in each independently configured candidate view. */
+	public static int interval(String speed) {
+		if ("slow".equals(speed)) return 120;
+		return "fast".equals(speed) ? 30 : 60;
+	}
+
 	public boolean dispatch(int keyCode, long now, int interval) {
 		if (keyCode != key) {
 			key = keyCode;

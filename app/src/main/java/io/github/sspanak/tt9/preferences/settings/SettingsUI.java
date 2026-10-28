@@ -6,6 +6,7 @@ import android.view.Gravity;
 import androidx.annotation.Nullable;
 
 import io.github.sspanak.tt9.R;
+import io.github.sspanak.tt9.ime.helpers.CandidateKeyRepeat;
 import io.github.sspanak.tt9.preferences.screens.appearance.DropDownAlignment;
 import io.github.sspanak.tt9.preferences.screens.appearance.DropDownBottomPaddingPortrait;
 import io.github.sspanak.tt9.preferences.screens.appearance.DropDownLayoutType;
@@ -189,11 +190,7 @@ public class SettingsUI extends SettingsTyping {
 
 	/** Minimum interval between held-arrow steps in the ordinary candidate row. */
 	public int getCandidateRepeatInterval() {
-		return switch (prefs.getString("pref_candidate_scroll_speed", "normal")) {
-			case "slow" -> 400;
-			case "fast" -> 120;
-			default -> 240;
-		};
+		return CandidateKeyRepeat.interval(prefs.getString("pref_candidate_scroll_speed", "normal"));
 	}
 
 	public int getDefaultWidthPercent(boolean isPortrait) {

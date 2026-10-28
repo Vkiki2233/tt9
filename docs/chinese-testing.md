@@ -8,7 +8,7 @@ input contribution. See [the update description](chinese-update.md) for scope an
 
 | Check | Result |
 | --- | --- |
-| Host and Chinese feature unit tests | 205 tests passing in Full; 205 in Lite (64 host, 141 feature) |
+| Host and Chinese feature unit tests | 206 tests passing in Full; 206 in Lite (65 host, 141 feature) |
 | Debug APK and combined Chinese pack build | Passed |
 | Full debug Android lint | 0 errors, 381 warnings |
 | Updated Full release with R8 and resource shrinking, including combined pack | Build passed |
@@ -16,6 +16,11 @@ input contribution. See [the update description](chinese-update.md) for scope an
 | Mive, Android 12, current edit/scroll combinations | 9/9 passed; three-option speed dialog also verified |
 | API 35 current optional-domain engine checks | 252/252 passed, including all 103 new pairs enabled/disabled |
 | API 35 current interactive speed choices and native repeats | 9/9 passed: English, Pinyin and expanded panel, three speeds each |
+| Latest equal-height and Roomy layouts, API 35 debug and minified | Eight display/font/mode combinations per build; 20 rapid collapse/reopen cycles per combination |
+| Latest Mive layout and repeat refinement | 5/5 focused cases passed; default rows match the ordinary 28 px row, Roomy is 33 px |
+| First-layout cache regression, actual Android debug runtime | 11/11 assertions passed; the preceding layout build reproduced 10/11 failures |
+| Final Mive cache-fix build | 3/3 geometry/native-caret cases passed; database and preferences unchanged |
+| Final API 35 cache-fix build, debug and minified | Default/Roomy UI checks passed in both builds, 20 rapid reopen cycles each; minified native-caret return passed |
 | API 35 signed-pack lifecycle, debug and minified | Real SAF/native install and split removal passed; personal words and host settings retained |
 | Final catalog UI, debug English and minified Chinese | Seven compact rows, full scrollable provenance and persistent toggles passed |
 | Final minified caret/panel smoke | System selection, edit/convert/reopen and numbered expanded panel passed |
@@ -49,7 +54,8 @@ learned pairs and custom-reading tables, were compared before/after and remained
 identical. Numeric selection uses the actual learned leading candidate rather
 than assuming a pristine dictionary always leads with 你.
 
-The final resource-only dialog correction was rebuilt and linted in debug and R8.
+Before the latest speed/layout refinement, the resource-only dialog correction
+was rebuilt and linted in debug and R8.
 All four base/feature DEX sets are byte-identical before and after that correction;
 the final Mive APK hashes were verified, and its three speed choices were checked
 again. Initial harness setup failures (a stopped IME falling back to Mive's system
@@ -59,7 +65,51 @@ handling. The Mive user separately confirmed that the new held-arrow endpoints,
 Pinyin-letter editing and return to Han candidates now work through physical keys;
 this is a qualitative confirmation, not a timed hardware-scanner benchmark.
 
-The later catalog-only revision keeps short count summaries and moves complete
+The subsequent speed/layout refinement replaces the Compact switch with a
+default-off Roomy option. Both independent speed selectors now use minimum
+native-repeat intervals of 120/60/30 ms for Slow/Normal/Fast. These are event
+gates, not a promise that a device sends repeats that quickly. The API 35 fixture
+sent repeats on absolute 20 ms deadlines and verified all three speeds in English,
+Pinyin and expanded candidates. Mive's faster Normal setting, held endpoints,
+release, short-tap wrapping, expanded collapse and native-caret return were also
+checked; its previous speed selection was restored afterwards.
+
+For both debug and minified API 35 builds, the latest geometry matrix covers
+480 px at density 240 and 1080 px at density 420, system font scales 1.0 and 1.3,
+and Roomy off/on. Ordinary/default expanded row heights match exactly at
+33, 42, 58 and 74 px; corresponding Roomy rows are 38, 49, 67 and 86 px.
+Roomy adds 2 dp padding per side, rounded to 6 or 10 extra pixels per candidate
+at these densities. Each of the 16 combinations retained six fully visible rows
+through 20 rapid collapse/reopen cycles. On Mive, default rows are 28 px and
+Roomy rows 33 px; candidate width increases from 47 to 53 px, and both modes
+passed the same 20-cycle check. These runs verify the normal-height cache as
+well as modestly larger Roomy spacing, rather than a fixed grid cell size.
+The first refinement's Mive preservation audit matched all six database tables and their
+canonical hashes, including 482,284 words, 321,524 positions and eight learned
+pairs. The only preference difference was the new, explicitly restored
+Roomy=false value. Both user speed choices remained Fast; temporary test tools
+were removed and the original official TT9 installation was left untouched.
+
+The broad geometry/speed matrix preceded a final first-layout cache correction.
+An isolated Android reflection probe reproduces the uncached fallback on the
+preceding debug build and passes all 11 assertions on the final build, including
+positive measured size without ordinary children, entirely unmeasured first
+layout, wrapper padding, and reuse after old Grid/Linear layout states. The
+probe changes no preferences or dictionary data. This private-method probe is
+debug-only: R8 inlines the resolver, and no optimizer/keep rules were weakened
+for testing. The final debug and minified builds each passed real UI geometry at
+480 px, density 240 and font scale 1.0: default 33 px and Roomy 38 px, with six
+fully visible rows through 20 rapid reopen cycles in each mode. The final
+minified native-caret smoke moved selection 4 to 3 in XIAN, converted to 西安 and
+reopened the full spelling list. Mive's final matching APK set
+repeats both geometry modes and their 20-cycle checks before the preservation
+audit. That final audit found zero preference differences and identical canonical
+hashes for all six database tables; installed and cached split hashes matched
+the final artifacts. Temporary tools were removed, both user speeds remained
+Fast and Roomy remained off, with the test IME selected and its empty editor
+focused. The official application was untouched.
+
+The catalog-only revision keeps short count summaries and moves complete
 licenses/provenance into a scrollable dialog. Its debug English and minified
 Chinese views were checked separately, including all seven counts, full metadata
 and persisted toggles. No prediction, timing, navigation or data format changed.

@@ -31,11 +31,11 @@ public class ChineseAppearanceScreen extends BaseScreenFragment {
 	@Override protected void onCreate() {
 		resetFontSize(true);
 		if (activity == null) return;
-		SwitchPreferenceCompat compact = findPreference("pref_chinese_candidate_compact");
-		if (compact != null) {
-			compact.setChecked(ChineseCandidateSettings.getCandidateCompact(activity.getSettings()));
-			compact.setOnPreferenceChangeListener((preference, value) -> {
-				activity.getSettings().getPrefsEditor().putBoolean("pref_chinese_candidate_compact", (boolean) value).apply();
+		SwitchPreferenceCompat roomy = findPreference(ChineseCandidateSettings.CANDIDATE_ROOMY);
+		if (roomy != null) {
+			roomy.setChecked(ChineseCandidateSettings.getCandidateRoomy(activity.getSettings()));
+			roomy.setOnPreferenceChangeListener((preference, value) -> {
+				activity.getSettings().getPrefsEditor().putBoolean(ChineseCandidateSettings.CANDIDATE_ROOMY, (boolean) value).apply();
 				return true;
 			});
 		}
