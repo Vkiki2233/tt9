@@ -65,6 +65,13 @@ restart the input method.
 
 ## Mive Android 12 debug checks
 
+Installed device APKs used an isolated test application ID and the Full source
+set with lean test assets and Lite download behavior. The normal Full flavor's
+complete bundled dictionary set was generated/validated but excluded from these
+installed test APKs. The device results below validate Chinese input and optional
+pack behavior; they are not an installation test of the stock all-dictionaries
+Full APK. Lite unit tests were also compiled and executed separately.
+
 The latest targeted run used ADB-injected Android `KeyEvent` input on the actual
 Mive. This reaches Android's input method key handling, including repeat events;
 it does not exercise the physical keypad scanner. Earlier human-operated keypad
