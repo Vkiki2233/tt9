@@ -40,6 +40,11 @@ public class ChineseSettingsScreen extends BaseScreenFragment {
 
 	@Override protected void onCreate() {
 		resetFontSize(true);
+		Preference download = findPreference("download_chinese_pack");
+		if (download != null) download.setOnPreferenceClickListener(preference -> {
+			if (activity != null) ChinesePackInstaller.downloadPack(activity);
+			return true;
+		});
 		Preference importPack = findPreference("import_chinese_pack");
 		if (importPack != null) importPack.setOnPreferenceClickListener(preference -> {
 			if (activity != null) ChinesePackInstaller.importPack(activity);

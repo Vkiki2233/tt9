@@ -8,11 +8,19 @@ input contribution. See [the update description](chinese-update.md) for scope an
 
 | Check | Result |
 | --- | --- |
-| Host and Chinese feature unit tests | 206 tests passing in Full; 206 in Lite (65 host, 141 feature) |
+| Host and Chinese feature unit tests | 214 tests passing in Full; 214 in Lite (73 host, 141 feature) |
 | Debug APK and combined Chinese pack build | Passed |
-| Full debug Android lint | 0 errors, 381 warnings |
+| Full debug Android lint | 0 errors, 386 warnings |
 | Updated Full release with R8 and resource shrinking, including combined pack | Build passed |
-| Updated Full release Android lint | 0 errors, 381 warnings |
+| Updated Full release Android lint | 0 errors, 386 warnings |
+| Lite debug Android lint | 0 errors, 386 warnings |
+| Delivery packaging | Full debug, Lite debug and minified Full release built and validated against actual base/split hashes |
+| Release preparation tests | 14 Python archive/inventory cases and isolated Groovy delivery-identity checks passed |
+| Final Full delivery on API 35 | 404, truncation and wrong-base rollback passed; valid download, stable cancellation and cached Finish installation preserved all nine tables and functional preferences |
+| Mive in-app delivery | 5/5 focused paths passed, with unchanged database tables, word frequencies and user settings |
+| Final Mive provenance build | 2/2 download/install and Chinese-input paths passed; fresh nine-table and user-preference snapshots unchanged |
+| Lite ordinary loading and local provenance on API 35 | Versioned online loading passed; a one-word legacy local pack stayed usable offline with no GET, then online loading restored all 482,284 factory rows |
+| Final minified delivery build on API 35 | Real matching SAF import/native installation, exact APK hashes, native caret and expanded candidates passed |
 | Mive, Android 12, current edit/scroll combinations | 9/9 passed; three-option speed dialog also verified |
 | API 35 current optional-domain engine checks | 252/252 passed, including all 103 new pairs enabled/disabled |
 | API 35 current interactive speed choices and native repeats | 9/9 passed: English, Pinyin and expanded panel, three speeds each |
@@ -125,6 +133,72 @@ preserving enabled fuzzy alternatives, and finish/cancel/timeout behavior after
 insertion or deletion. Full-spelling restoration is also checked in the device
 operation matrices below.
 
+## In-app delivery verification
+
+The delivery revision adds a deterministic release download and validates its
+base APK identity and both split hashes before committing changes. An unchanged
+Chinese dictionary hash takes the feature-only path, preserving existing word
+frequencies, learned pairs and explicit personal readings. These checks are
+separate from the earlier candidate-layout matrices above.
+
+The actual Mive Android 12 run passed five focused paths across the initial and
+cancellation-fixed delivery builds: HTTP 404 and explicit retry, complete combined download
+and native installation, final cancellation without another automatic prompt,
+explicit Finish installation using the cached files, and Chinese/native-caret
+input after installation. The final cancel/retry added no GET. Its three total
+requests were one 404 and two complete downloads for the two tested base builds;
+all requested only the exact deterministic asset name. The same nine Chinese and
+English database table hashes and all default preferences matched throughout,
+including 482,284 Chinese word rows, 321,524 positions, eight learned pairs and
+the user's frequency totals. Installed/cached APKs and delivery metadata matched
+the final immutable set. Temporary tools, the reverse mapping and fixture server
+were removed; the install-source permission was restored to its original state.
+The transient error toast was not captured, so this run claims retry behavior
+and data preservation rather than observation of its exact message text.
+The final local-provenance build then repeated one complete download/native
+installation and Chinese-input smoke, passing both focused paths. Its fresh
+nine-table snapshot and all user preferences remained identical, including
+learning performed since the earlier baseline. Installed/cached APKs and the
+descriptor matched this final build, and temporary services/tools/permissions
+were cleaned up again.
+
+On API 35, the initial delivery build reproduced an automatic second Android
+update prompt after Cancel. The final build clears the queued offer when the
+retained download activity owns consent. Its Full run rejected a 404, truncated
+archive and a complete ZIP bound to the wrong base without changing any of nine
+dictionary/custom/reading/meta tables, functional preferences or preceding pack
+file hashes, and left no pending directories. A valid online update preserved
+the same snapshot, including a real learned factory preference, explicit personal
+reading and domain-learning fixture. Cancel stayed cancelled; explicit Finish
+used the cached files with no additional GET before installing both splits.
+
+Lite's ordinary Languages → Load Selected entry fetched its exact versioned Lite
+asset and installed both splits through native consent. A final provenance case
+imported a metadata-less, one-word local ZIP through SAF: the stored hash had the
+local marker, the single word worked in the IME, and settings/IME startup made
+zero GETs with the server unavailable. Ordinary online loading then fetched the
+complete matching Lite ZIP, restored all 482,284 factory rows, and replaced the
+local marker with the verified published hash. The final minified build passed
+real matching SAF import/native installation, exact three-APK hash verification,
+XIAN system-caret movement and conversion to 西安, and clean numbered expanded
+rows. It was not tested against a live production HTTPS release endpoint.
+
+Full delivery QA uses the real Full code and LITE=false, with only the ordinary
+English and Chinese dictionaries bundled in its test APK. Other Full dictionaries
+are omitted to keep the fixture small; Lite has no bundled word dictionaries.
+This tests the Full offline/Chinese-download distinction without claiming a new
+installation test of the stock all-dictionaries Full distribution. Debug online
+checks use a loopback HTTP fixture permitted only by the external test manifest.
+Production builds require HTTPS; minified release installation and input checks
+use a matching local ZIP and do not claim a live production HTTPS release test.
+No GitHub Release or signing-secret configuration is performed by these tests.
+
+Release preparation validates actual base/feature/UI sets, complete source/license
+notices and a closed checksum inventory. Fourteen Python cases reject damaged,
+stale and mismatched archives, wrong tags, overwritten assets and unlisted files.
+Workflow YAML, embedded Python and 19 shell blocks passed syntax checks; shell
+blocks were not executed as a publication test.
+
 ## Reproduce the debug build
 
 Use the repository's Gradle wrapper and its configured JDK/Android SDK. From the
@@ -134,6 +208,14 @@ repository root (`gradlew.bat` on Windows):
 ./gradlew :app:testLiteDebugUnitTest :chinese:testLiteDebugUnitTest \
   :app:packageLiteDebugChinesePack :app:lintLiteDebug
 ```
+
+For the signed, versioned download assets and dry-run publishing inventory, see
+[the release guide](chinese-release.md). The current delivery tests add eight
+host JVM cases for identity, metadata bounds, wrong base/variant/signature and
+payload damage. The extra five lint warnings are missing translations in the
+base resource set for new download messages; Chinese translations are supplied
+through the optional translation split. Existing warning totals and earlier UI
+matrices below describe their respective revisions.
 
 On Windows, a checkout made with `core.symlinks=false` can leave the tracked
 `app/src/lite/java` symlink as a text file containing `../full/java`. The local

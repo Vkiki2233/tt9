@@ -3,6 +3,12 @@ import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 import groovy.xml.XmlParser
 import groovy.xml.XmlNodePrinter
+import groovy.json.JsonSlurper
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
+
+apply from: 'chinese-delivery-tools.gradle'
 
 // Run after compiling the base and matching signed feature; never embed the feature in its own base APK.
 androidComponents.onVariants(androidComponents.selector().all()) { variant ->
@@ -10,6 +16,7 @@ androidComponents.onVariants(androidComponents.selector().all()) { variant ->
 	String flavor = variant.flavorName
 	String buildType = variant.buildType
 	def output = layout.buildDirectory.file("outputs/chinese-packs/${variant.name}/zh-simplified-pinyin.zip")
+	def baseDirectory = layout.buildDirectory.dir("outputs/apk/${flavor}/${buildType}")
 	def featureDirectory = project(':chinese').layout.buildDirectory.dir("outputs/apk/${flavor}/${buildType}")
 	def languageOutput = layout.buildDirectory.file("outputs/chinese-ui/${variant.name}/chinese-ui.apk")
 	def stableIds = layout.buildDirectory.file("intermediates/stable_resource_ids_file/${variant.name}/process${variantName}Resources/stableIds.txt")
@@ -81,7 +88,7 @@ androidComponents.onVariants(androidComponents.selector().all()) { variant ->
 				environment 'TT9_CHINESE_KEY_PASS', signing.keyPassword ?: ''
 				commandLine java, '-jar', signer, 'sign', '--ks', signing.storeFile, '--ks-key-alias', signing.keyAlias,
 					'--ks-pass', 'env:TT9_CHINESE_STORE_PASS', '--key-pass', 'env:TT9_CHINESE_KEY_PASS',
-					'--min-sdk-version', '24', '--v1-signing-enabled', 'true', '--v2-signing-enabled', 'true',
+					'--min-sdk-version', android.defaultConfig.minSdkVersion.apiLevel.toString(), '--v1-signing-enabled', 'true', '--v2-signing-enabled', 'true',
 					'--v3-signing-enabled', 'true', '--v4-signing-enabled', 'false', '--out', signed, unsigned
 			}.result.get()
 			logger.lifecycle("Signed Chinese UI configuration split: ${signed} (${localized.children().size()} translations)")
@@ -100,10 +107,47 @@ androidComponents.onVariants(androidComponents.selector().all()) { variant ->
 		inputs.file(file('languages/chinese/domains/THUOCL-LICENSE.txt'))
 		inputs.file(languageOutput)
 		inputs.files(featureDirectory.map { directory -> fileTree(directory).matching { include '*.apk' } })
-		outputs.file(output)
+		inputs.files(baseDirectory.map { directory -> fileTree(directory).matching { include '*.apk', 'output-metadata.json' } })
+		inputs.property('applicationId', variant.applicationId)
+		inputs.property('versionCode', variant.outputs.first().versionCode)
+		outputs.dir(output.map { it.asFile.parentFile })
 		doLast {
 			List<File> featureApks = fileTree(featureDirectory).matching { include '*.apk' }.files.toList()
 			if (featureApks.size() != 1) throw new GradleException("Expected one signed Chinese feature APK in ${featureDirectory.get().asFile}")
+			File baseFolder = baseDirectory.get().asFile
+			def metadata = new JsonSlurper().parse(new File(baseFolder, 'output-metadata.json'))
+			if (metadata.elements.size() != 1 || metadata.applicationId != variant.applicationId.get()
+				|| metadata.variantName != variant.name) throw new GradleException('Unexpected base APK output metadata')
+			File baseApk = new File(baseFolder, metadata.elements[0].outputFile.toString())
+			if (baseApk.parentFile.canonicalFile != baseFolder.canonicalFile || !baseApk.isFile()) {
+				throw new GradleException('Missing matching base APK')
+			}
+			File sdk = androidComponents.sdkComponents.sdkDirectory.get().asFile
+			String executable = System.getProperty('os.name').toLowerCase().contains('windows') ? 'aapt2.exe' : 'aapt2'
+			File aapt = new File(sdk, "build-tools/${android.buildToolsVersion}/${executable}")
+			File java = new File(System.getProperty('java.home'), "bin/${executable.endsWith('.exe') ? 'java.exe' : 'java'}")
+			File signer = new File(sdk, "build-tools/${android.buildToolsVersion}/lib/apksigner.jar")
+			List<File> apks = [baseApk, featureApks[0], languageOutput.get().asFile]
+			List<Map> identities = apks.collect { apk ->
+				def verify = providers.exec {
+					commandLine java, '-jar', signer, 'verify', '--verbose', '--print-certs',
+						'--min-sdk-version', android.defaultConfig.minSdkVersion.apiLevel.toString(), apk
+					ignoreExitValue = true
+				}
+				if (verify.result.get().exitValue != 0) {
+					throw new GradleException("Cannot verify ${apk.name}:\n${verify.standardOutput.asText.get()}${verify.standardError.asText.get()}")
+				}
+				String verification = verify.standardOutput.asText.get()
+				String badging = providers.exec { commandLine aapt, 'dump', 'badging', apk }.standardOutput.asText.get()
+				Map identity = ChineseDeliveryTools.apkIdentity(badging)
+				identity.certificateSha256 = ChineseDeliveryTools.certificateSha256(verification)
+				return identity
+			}
+			String packageName = variant.applicationId.get()
+			String versionCode = variant.outputs.first().versionCode.get().toString()
+			ChineseDeliveryTools.requireMatching(identities, packageName, versionCode)
+			String certificate = identities[0].certificateSha256
+			String delivery = ChineseDeliveryTools.properties(packageName, versionCode, variant.name, certificate, *apks)
 			File pack = output.get().asFile
 			pack.parentFile.mkdirs()
 			pack.withOutputStream { raw ->
@@ -130,9 +174,15 @@ androidComponents.onVariants(androidComponents.selector().all()) { variant ->
 					'chinese/chinese.apk': featureApks[0],
 					'chinese/chinese-ui.apk': languageOutput.get().asFile
 				].each { name, source -> source.withInputStream { input -> writeChinesePackEntry(zip, name, input) } }
+				writeChinesePackEntry(zip, 'chinese/delivery.properties', new ByteArrayInputStream(delivery.getBytes(StandardCharsets.UTF_8)))
 				zip.close()
 			}
+			String assetName = ChineseDeliveryTools.assetName(packageName, versionCode, flavor, buildType, certificate)
+			File releaseAsset = new File(pack.parentFile, assetName)
+			fileTree(pack.parentFile).matching { include 'tt9-chinese-*.zip' }.files.findAll { it != releaseAsset }.each { delete(it) }
+			Files.copy(pack.toPath(), releaseAsset.toPath(), StandardCopyOption.REPLACE_EXISTING)
 			logger.lifecycle("Chinese dictionary + signed feature pack: ${pack} (${pack.length()} bytes)")
+			logger.lifecycle("Versioned Chinese release asset: ${releaseAsset.name}")
 		}
 	}
 }

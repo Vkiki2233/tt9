@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto" app:orderingFromXml="true">
+	<Preference app:key="download_chinese_pack" app:title="@string/chinese_pack_download"
+		app:summary="@string/chinese_pack_download_summary" />
 	<Preference app:key="screen_chinese_user_words" app:fragment="io.github.sspanak.tt9.chinese.ChineseUserWordsScreen"
 		app:title="@string/chinese_user_words_title" />
 	<Preference app:key="screen_chinese_domains" app:fragment="io.github.sspanak.tt9.chinese.ChineseDomainPacksScreen"

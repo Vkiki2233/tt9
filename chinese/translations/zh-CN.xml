@@ -336,6 +336,11 @@
 	<string name="chinese_pack_title">中文扩展</string>
 	<string name="chinese_pack_system_confirmation">请完成 Android 系统确认，以安装或移除中文功能。</string>
 	<string name="chinese_pack_install_failed">Android 无法安装或移除中文扩展，请确认主程序与中文包的版本和签名匹配。</string>
+	<string name="chinese_pack_download">下载中文包</string>
+	<string name="chinese_pack_download_summary">一起下载词库与中文功能，然后确认安装。</string>
+	<string name="chinese_pack_download_failed">无法加载中文包。请检查网络后重试，或从文件安装配套中文包。</string>
+	<string name="chinese_pack_unavailable">尚无适用于当前版本的中文包。请稍后重试，或从文件安装配套中文包。</string>
+	<string name="chinese_pack_invalid">中文包与当前应用不匹配或已损坏。请重新下载，或使用配套中文包文件。</string>
 	<string name="chinese_pack_import">从文件安装中文包</string>
 	<string name="chinese_pack_import_summary">选择与当前主程序一起提供的中文 ZIP，包内包含词库、离线数据及签名中文扩展；安装时需要 Android 系统确认。</string>
 	<string name="chinese_pack_finish_install">完成中文扩展安装</string>

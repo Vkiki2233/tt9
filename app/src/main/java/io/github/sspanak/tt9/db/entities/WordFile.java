@@ -16,6 +16,7 @@ import java.util.zip.ZipEntry;
 import io.github.sspanak.tt9.languages.Language;
 import io.github.sspanak.tt9.languages.LanguageKind;
 import io.github.sspanak.tt9.extensions.ChinesePack;
+import io.github.sspanak.tt9.extensions.ChinesePackDownload;
 import io.github.sspanak.tt9.util.Logger;
 import io.github.sspanak.tt9.util.RemoteAssetFile;
 
@@ -26,6 +27,7 @@ public class WordFile extends RemoteAssetFile {
 	private final Context context;
 	private final boolean containsChinesePack;
 	private final Uri localSource;
+	private boolean downloadedChinesePack;
 
 	private int lastCharCode;
 
@@ -49,7 +51,13 @@ public class WordFile extends RemoteAssetFile {
 	}
 
 	@Override protected InputStream openFileStream() throws IOException {
-		if (localSource == null) return super.openFileStream();
+		if (localSource == null) {
+			if (containsChinesePack && (!exists() || !ChinesePackDownload.isCurrent(context))) {
+				downloadedChinesePack = true;
+				return ChinesePackDownload.open(context);
+			}
+			return super.openFileStream();
+		}
 		InputStream stream = context.getContentResolver().openInputStream(localSource);
 		if (stream == null) throw new IOException("Cannot open Chinese pack");
 		return stream;
@@ -57,7 +65,7 @@ public class WordFile extends RemoteAssetFile {
 
 	@Override protected void validateFirstEntry(ZipEntry entry) throws IOException {
 		String expected = new File(path).getName().replaceFirst("\\.zip$", ".txt");
-		if (localSource != null && (entry.isDirectory() || !expected.equals(entry.getName()))) {
+		if ((localSource != null || downloadedChinesePack) && (entry.isDirectory() || !expected.equals(entry.getName()))) {
 			zipStream.close();
 			throw new IOException("The selected ZIP is not a matching Chinese dictionary pack");
 		}
@@ -279,9 +287,13 @@ public class WordFile extends RemoteAssetFile {
 
 	public ChinesePack.Prepared stageChinesePack() throws IOException {
 		ChinesePack.Prepared pack = containsChinesePack && zipStream != null ? ChinesePack.stage(context, zipStream) : null;
-		if (localSource != null && (pack == null || !pack.isComplete())) {
+		if ((localSource != null || downloadedChinesePack) && (pack == null || !pack.isComplete())) {
 			if (pack != null) pack.close();
 			throw new IOException("The selected Chinese pack is missing its data or signed extension");
+		}
+		if (pack != null) {
+			try { pack.validateDelivery(context, downloadedChinesePack); }
+			catch (IOException exception) { pack.close(); throw exception; }
 		}
 		return pack;
 	}

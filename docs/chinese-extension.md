@@ -19,17 +19,35 @@ table and its Unicode license, the compact prefix index, `chinese.apk` and
 Release packaging requires the same configured signing key for the base and both
 splits. Android checks the package, version and signing certificate during install.
 
-Enable Simplified Chinese, then use Languages → Chinese Input → Import/Update
-Chinese Pack to select the ZIP. Android may ask to allow installs from this source
+Enable Simplified Chinese, then use Languages → Chinese Input → Download Chinese
+Pack. Loading Chinese from the ordinary dictionary list uses the same combined
+download when its feature is missing or does not match the installed base. One
+download supplies the dictionary, data and both signed splits; completion proceeds
+to Android installation consent. The file importer remains available for offline
+installation of a matching ZIP. Android may ask to allow installs from this source
 and will ask for installation confirmation. Installing or removing splits can
 restart the input method. No previous dictionary download is required to import
-this ZIP. The full offline flavor keeps its original bundled plain dictionaries
-and has no Internet permission; both flavors keep Chinese extension code, indexes
-and translated host UI outside the base. The legacy online dictionary URL remains supported; a
-data-only dictionary does not contain these extension features. Until a matching
-signed pack is published, distribute the base APK and generated ZIP together and
-use this local import path. Existing online dictionary files alone must not be
-advertised as the new code pack.
+this ZIP. Full retains bundled plain dictionaries for its other languages and
+uses Internet access for the optional Chinese download. Both flavors keep Chinese
+extension code, indexes and translated host UI outside the base. Other languages
+retain their existing dictionary download or bundled-asset paths.
+
+Chinese downloads resolve an immutable release asset by installed package,
+version code, flavor, build type and signing certificate. The release workflow
+stamps the destination release URL into the matching base build. Schema-one
+delivery metadata also binds the exact base APK SHA-256 and both split hashes;
+validation happens before committing dictionary or pack changes. Missing,
+incompatible and damaged downloads leave the previous dictionary/pack intact.
+When a published dictionary hash is unchanged, updating just the feature files
+preserves learned frequencies and user data. Local imports use a separate hash
+marker: they remain usable offline, but cannot falsely authorize this fast path
+for a different or older dictionary on a later online reload.
+The production downloader requires HTTPS. Only debug builds allow a loopback
+HTTP fixture for local QA; release networking is not weakened for tests.
+See [release packaging and publishing](chinese-release.md) for the signed build,
+dry-run verification and explicit publishing workflow. Earlier combined ZIPs
+without delivery metadata remain supported for local import; online downloads
+require the new metadata and are never redirected to a data-only dictionary.
 
 Deleting the Chinese dictionary removes its settings and private pack data, then
 asks Android to remove both optional splits. Declining that confirmation leaves

@@ -60,12 +60,27 @@ public class ChinesePackInstallActivity extends Activity {
 	}
 
 	private void begin() {
-		if (getIntent().getBooleanExtra("pick_pack", false)
-			|| (!ChinesePackInstaller.isRemovalPending(this) && !ChinesePackInstaller.needsInstall(this))) {
+		if (getIntent().getBooleanExtra("pick_pack", false)) {
 			startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE)
 				.setType("application/zip").putExtra(Intent.EXTRA_MIME_TYPES, new String[] {"application/zip", "application/x-zip-compressed", "application/octet-stream"}), PICK_PACK);
 			return;
 		}
+		if (getIntent().getBooleanExtra("download_pack", false)
+			|| (!ChinesePackInstaller.isRemovalPending(this) && !ChinesePackInstaller.needsInstall(this))) {
+			LanguageCollection.init(this);
+			Language language = LanguageCollection.getByLocale("zh_CN");
+			showImportProgress();
+			importResult = new ImportResult();
+			importResult.attach(this);
+			if (language == null || !DictionaryLoader.downloadChinesePack(this, new SettingsStore(this), language, importResult)) {
+				fail("Chinese download is unavailable or already running");
+			}
+			return;
+		}
+		beginInstall();
+	}
+
+	private void beginInstall() {
 		if (Build.VERSION.SDK_INT >= 26 && !getPackageManager().canRequestPackageInstalls()) {
 			startActivityForResult(new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + getPackageName())), UNKNOWN_SOURCES);
 		} else {
@@ -113,8 +128,12 @@ public class ChinesePackInstallActivity extends Activity {
 		private void deliver() {
 			ChinesePackInstallActivity current = activity.get();
 			if (success == null || current == null || current.isDestroyed()) return;
-			if (!success) Toast.makeText(current, R.string.chinese_pack_install_failed, Toast.LENGTH_LONG).show();
-			current.finish();
+			current.importResult = null;
+			if (!success) {
+				Toast.makeText(current, R.string.chinese_pack_download_failed, Toast.LENGTH_LONG).show();
+				current.finish();
+			} else if (ChinesePackInstaller.needsInstall(current)) current.beginInstall();
+			else current.finish();
 		}
 	}
 

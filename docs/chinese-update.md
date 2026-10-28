@@ -33,11 +33,11 @@
 
 ### 包体与上游发布集成
 
-中文专用转换增强、拼音编辑、音节规则、模糊音、前缀索引、领域词库及其学习、用户词管理、展开候选面板的布局与导航、中文设置位于可选 `chinese` 功能模块。主 APK 保留共用键盘、普通候选条、存储和安装接口；中文界面翻译由资源分包提供。未安装中文包的用户无需安装这些中文功能代码和索引，也不会看到展开面板的设置。Full 离线版本继续保留原有普通字典，不增加联网要求。
+中文专用转换增强、拼音编辑、音节规则、模糊音、前缀索引、领域词库及其学习、用户词管理、展开候选面板的布局与导航、中文设置位于可选 `chinese` 功能模块。主 APK 保留共用键盘、普通候选条、存储和安装接口；中文界面翻译由资源分包提供。未安装中文包的用户无需安装这些中文功能代码和索引，也不会看到展开面板的设置。Full 保留其他语言的内置词典和离线加载，同时允许联网下载可选中文包；也保留离线文件导入。
 
 此实现使用 Android 签名分包和系统安装确认。包任务会生成字典、数据、功能 APK 与翻译 APK 的组合 ZIP。代码分包必须与主 APK 的包名、版本和签名匹配，翻译分包的资源 ID 必须来自同一次主 APK 构建。构建和本地导入方法见 [中文扩展开发说明](chinese-extension.md)。
 
-**上游仍需接入中文功能包的构建、签名、托管与发布流程。** 现有在线中文字典下载地址仍可能只提供普通字典，不能据此宣称下载字典就会自动安装新功能。后续上游发布需一同提供匹配的主 APK 与组合 ZIP，或将匹配包接入其下载渠道。本地导入路径已提供在 **语言 → 中文输入 → 导入／更新中文扩展包**；Android 会要求安装来源权限和安装确认，安装分包可能重启输入法。应用商店分发还需适配相应的动态功能交付流程。
+**软件内下载已接入配套组合包：语言 → 中文输入 → 下载中文包。** 常规词典加载入口在缺少配套中文功能时也使用同一条下载链路。下载一次即包含词库、离线数据、功能和界面分包，随后进入 Android 安装确认。下载按主应用包名、版本、类型与签名匹配，并核对当前主 APK 和分包的文件哈希；下载失败、包不匹配或损坏时保留原数据。发布流程会一起构建、验证主 APK 和配套中文包，支持先预演、再明确发布；维护者配置发布签名后即可按 [发布说明](chinese-release.md) 操作，无需另外设计下载机制。当前 PR 本身不代表已发布官方新版。应用商店分发仍需相应的交付集成。
 
 ### 当前范围
 
@@ -76,11 +76,11 @@ This document describes a contribution to upstream Traditional T9 and can be use
 
 ### Package size and upstream publishing
 
-Chinese-specific conversion enhancements, Pinyin editing, syllable rules, fuzzy matching, the prefix index, domain data and learning, word management, expanded-panel layout/navigation, and Chinese settings live in the optional `chinese` feature module. The base retains shared keyboard, ordinary candidate rows, storage, and installation interfaces. Chinese UI translations ship in a resource split. Users without the Chinese pack do not install this feature code or its indexes and do not see expanded-panel settings. The Full offline flavor retains its original plain dictionaries without adding an Internet requirement.
+Chinese-specific conversion enhancements, Pinyin editing, syllable rules, fuzzy matching, the prefix index, domain data and learning, word management, expanded-panel layout/navigation, and Chinese settings live in the optional `chinese` feature module. The base retains shared keyboard, ordinary candidate rows, storage, and installation interfaces. Chinese UI translations ship in a resource split. Users without the Chinese pack do not install this feature code or its indexes and do not see expanded-panel settings. Full retains bundled/offline dictionaries for other languages while allowing the optional Chinese download; matching local ZIP import remains available offline.
 
 The implementation uses Android-signed splits and the system installation prompt. Its packaging task produces a combined ZIP containing the dictionary, data, feature APK, and translation APK. Code splits must match the base package name, version, and signing certificate. Translation resource IDs must come from that exact base build. See the [Chinese extension development notes](chinese-extension.md) for building and local import.
 
-**Upstream still needs to integrate building, signing, hosting, and publishing the Chinese feature pack.** Existing online Chinese dictionary URLs may still provide only plain dictionary data; downloading those files does not deliver the new code. A future upstream release must provide its matching base APK and combined ZIP together, or integrate the matching pack into its download channel. Local import is available through **Languages → Chinese Input → Import/update Chinese pack**. Android requests install-source permission and confirmation; installing splits can restart the input method. App-store distribution also needs the applicable dynamic-feature delivery integration.
+**In-app delivery uses Languages → Chinese Input → Download Chinese pack.** Ordinary Chinese dictionary loading uses the same combined download when its matching feature is missing. One download contains the dictionary, offline data, feature and translation splits, then continues to Android installation consent. Resolution includes package, version, flavor/build type and signer; metadata additionally verifies the installed base APK and split hashes before changing data. Failed, incompatible or damaged downloads preserve the preceding dictionary and pack. The release workflow builds/verifies matching base APKs and packs together, supports a dry run and requires explicit publishing. Maintainers configure their release signing credentials and follow the [release guide](chinese-release.md); no separate download mechanism remains to design. This PR itself does not publish an official release. Store distributions still need their corresponding delivery integration.
 
 ### Current scope
 

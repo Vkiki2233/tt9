@@ -157,7 +157,11 @@ public class DictionaryLoadingBar extends DictionaryProgressNotification {
 
 
 	private void generateErrorMsg(@NonNull String errorType, @Nullable Language lang, long line) {
-		if (lang == null || errorType.equals(InvalidLanguageException.class.getSimpleName())) {
+		if (errorType.equals(io.github.sspanak.tt9.extensions.ChinesePackDownload.UnavailableException.class.getSimpleName())) {
+			message = getResources().getString(R.string.chinese_pack_unavailable);
+		} else if (errorType.equals(io.github.sspanak.tt9.extensions.ChinesePackDownload.InvalidPackException.class.getSimpleName())) {
+			message = getResources().getString(R.string.chinese_pack_invalid);
+		} else if (lang == null || errorType.equals(InvalidLanguageException.class.getSimpleName())) {
 			message = getResources().getString(R.string.add_word_invalid_language);
 		} else if (errorType.equals(DictionaryImportException.class.getSimpleName()) || errorType.equals(InvalidLanguageCharactersException.class.getSimpleName())) {
 			message = getResources().getString(R.string.dictionary_load_bad_char, line, lang.getName());

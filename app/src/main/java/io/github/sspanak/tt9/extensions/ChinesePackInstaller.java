@@ -104,6 +104,10 @@ public final class ChinesePackInstaller {
 	}
 
 	private static void schedule(Context context) {
+		if (context instanceof ChinesePackInstallActivity) {
+			state(context).edit().putBoolean(OFFER, false).apply();
+			return; // Its retained callback continues to consent; cancellation must stay cancelled.
+		}
 		state(context).edit().putBoolean(OFFER, true).apply();
 		if (context instanceof Activity activity) {
 			activity.runOnUiThread(() -> offer(activity));
@@ -134,6 +138,10 @@ public final class ChinesePackInstaller {
 
 	public static void importPack(Activity activity) {
 		activity.startActivity(new Intent(activity, ChinesePackInstallActivity.class).putExtra("pick_pack", true));
+	}
+
+	public static void downloadPack(Activity activity) {
+		activity.startActivity(new Intent(activity, ChinesePackInstallActivity.class).putExtra("download_pack", true));
 	}
 
 	static void completed(Context context) {

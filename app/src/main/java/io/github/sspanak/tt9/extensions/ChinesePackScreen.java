@@ -17,6 +17,11 @@ public class ChinesePackScreen extends BaseScreenFragment {
 
 	@Override protected void onCreate() {
 		resetFontSize(true);
+		Preference download = findPreference("download_chinese_pack");
+		if (download != null) download.setOnPreferenceClickListener(preference -> {
+			if (activity != null) ChinesePackInstaller.downloadPack(activity);
+			return true;
+		});
 		Preference file = findPreference("import_chinese_pack");
 		if (file != null) file.setOnPreferenceClickListener(preference -> {
 			if (activity != null) ChinesePackInstaller.importPack(activity);

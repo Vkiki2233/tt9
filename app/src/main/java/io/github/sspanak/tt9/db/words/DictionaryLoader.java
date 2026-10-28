@@ -24,12 +24,14 @@ import io.github.sspanak.tt9.db.exceptions.DictionaryImportAbortedException;
 import io.github.sspanak.tt9.db.exceptions.DictionaryImportException;
 import io.github.sspanak.tt9.db.sqlite.DeleteOps;
 import io.github.sspanak.tt9.db.sqlite.InsertOps;
+import io.github.sspanak.tt9.db.sqlite.ReadOps;
 import io.github.sspanak.tt9.db.sqlite.SQLiteOpener;
 import io.github.sspanak.tt9.db.sqlite.Tables;
 import io.github.sspanak.tt9.db.sqlite.WordDbOpener;
 import io.github.sspanak.tt9.ime.helpers.InputModePolicy;
 import io.github.sspanak.tt9.extensions.ChinesePack;
 import io.github.sspanak.tt9.extensions.ChinesePackInstaller;
+import io.github.sspanak.tt9.extensions.ChinesePackDownload;
 import io.github.sspanak.tt9.languages.Language;
 import io.github.sspanak.tt9.languages.LanguageKind;
 import io.github.sspanak.tt9.languages.NaturalLanguage;
@@ -122,6 +124,12 @@ public class DictionaryLoader {
 		return LanguageKind.isChinesePinyin(language) && load(context, settings, languages, source, onComplete);
 	}
 
+	public static boolean downloadChinesePack(@NonNull Context context, @NonNull SettingsStore settings, @NonNull Language language, @NonNull Consumer<Boolean> onComplete) {
+		ArrayList<Language> languages = new ArrayList<>(1);
+		languages.add(language);
+		return LanguageKind.isChinesePinyin(language) && load(context, settings, languages, null, onComplete);
+	}
+
 
 	public static boolean autoLoad(@NonNull InputMethodService context, @NonNull SettingsStore settings, @NonNull Language language) {
 		if (!InputModePolicy.isDictionaryEnabled(language, settings.getPredictiveMode()) || isRunning()) {
@@ -144,13 +152,13 @@ public class DictionaryLoader {
 				lastAutoLoadAttemptTime.put(language.getId(), System.currentTimeMillis());
 
 				final boolean noDictionary = hash == null || hash.isEmpty();
-				final boolean isDictionaryOutdated = noDictionary || !hash.equals(new WordFile(context, language, context.getAssets()).getHash());
+				// Local imports remain usable offline, but are not proof of the bundled dictionary's identity.
+				final String comparisonHash = hash != null && hash.startsWith("local:") ? hash.substring(6) : hash;
+				final boolean isDictionaryOutdated = noDictionary || !comparisonHash.equals(new WordFile(context, language, context.getAssets()).getHash());
 				final boolean noNotifications = DeviceInfo.AT_LEAST_ANDROID_13;
-				if (LanguageKind.isChinesePinyin(language) && (!ChinesePack.isDataAvailable(context) || !ChinesePackInstaller.isInstalled(context))) {
-					ChinesePackInstaller.offerMissingPack(context);
-				}
+				final boolean needsChinesePack = LanguageKind.isChinesePinyin(language) && !ChinesePackDownload.isCurrent(context);
 
-				if (noDictionary || (isDictionaryOutdated && noNotifications)) {
+				if (noDictionary || needsChinesePack || (isDictionaryOutdated && noNotifications)) {
 					load(context, settings, language);
 				} else if (isDictionaryOutdated) {
 					new DictionaryUpdateNotification(context, language).show();
@@ -213,8 +221,29 @@ public class DictionaryLoader {
 			Timer.start(LOG_TAG);
 
 			float progress = 1;
+			WordFile incoming = new WordFile(context, language, context.getAssets());
+			ReadOps read = new ReadOps();
+			boolean packOnly = localSource == null && LanguageKind.isChinesePinyin(language)
+				&& !incoming.getHash().isEmpty()
+				&& incoming.getHash().equals(read.getLanguageFileHash(sqlite.getDb(), language.getId()))
+				&& read.exists(sqlite.getDb(), language.getId());
 
 			sqlite.beginTransaction();
+			if (packOnly) {
+				try (BufferedReader reader = incoming.getReader()) {
+					char[] buffer = new char[16384];
+					while (reader.read(buffer) != -1) {
+						if (Thread.currentThread().isInterrupted()) throw new DictionaryImportAbortedException();
+					}
+					pack = incoming.stageChinesePack();
+				}
+				if (pack != null) pack.activate();
+				sqlite.finishTransaction();
+				importSuccessful = true;
+				if (pack != null) { pack.confirm(); ChinesePackInstaller.dictionaryInstalled(context); }
+				sendProgressMessage(language, 100);
+				return; // A feature-only update must preserve learned dictionary frequencies.
+			}
 
 			Tables.dropWordsIndexes(sqlite.getDb(), language);
 			sendProgressMessage(language, ++progress);
@@ -362,7 +391,8 @@ public class DictionaryLoader {
 				sendProgressMessage(language, minProgress + progressRatio * wordCount);
 			}
 			saveWordBatch(batch);
-			InsertOps.replaceLanguageMeta(sqlite.getDb(), language.getId(), wordFile.getHash());
+			String importedHash = localSource == null ? wordFile.getHash() : "local:" + wordFile.getHash();
+			InsertOps.replaceLanguageMeta(sqlite.getDb(), language.getId(), importedHash);
 			return wordFile.stageChinesePack();
 		}
 	}

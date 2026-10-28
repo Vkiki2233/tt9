@@ -150,6 +150,10 @@ public final class ChinesePack {
 			return containsData(pending) && containsNonemptyFile(pending, APK_NAME) && containsNonemptyFile(pending, LANGUAGE_APK_NAME);
 		}
 
+		public void validateDelivery(Context context, boolean required) throws IOException {
+			ChinesePackDownload.validate(context, pending, required);
+		}
+
 		public void activate() throws IOException {
 			if (destination.exists() && !destination.renameTo(backup)) throw new IOException("Cannot replace Chinese pack");
 			if (!pending.renameTo(destination)) {
