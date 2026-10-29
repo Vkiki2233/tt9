@@ -23,6 +23,7 @@ input contribution. See [the update description](chinese-update.md) for scope an
 | Final minified delivery build on API 35 | Real matching SAF import/native installation, exact APK hashes, native caret and expanded candidates passed |
 | Fresh Chinese removal, API 35 debug | Delete/cancel/finish/reinstall passed; Chinese defaults reset, personal/global data retained and no automatic re-download |
 | Final minified selective removal, API 35 | Real Delete Unselected/cancel/finish passed; 173,916 English rows and personal-table hashes unchanged, both splits removed, zero Chinese download requests |
+| Subsequent Mive upgrade and panel/Pinyin continuation | Final matched debug APK/cache set installed; collapse → Up re-entry regression and system-caret delete/insert/convert passed; fresh nine-table and default-preference snapshots unchanged |
 | Mive, Android 12, current edit/scroll combinations | 9/9 passed; three-option speed dialog also verified |
 | API 35 current optional-domain engine checks | 252/252 passed, including all 103 new pairs enabled/disabled |
 | API 35 current interactive speed choices and native repeats | 9/9 passed: English, Pinyin and expanded panel, three speeds each |
@@ -241,8 +242,22 @@ star/pound swap remained set. An external read-only instrumentation APK inspecte
 private state through Android/SQLite APIs; production optimizer rules and
 debuggable settings were unchanged.
 
-These fresh removal tests use the API 35 emulator. The Mive delivery tests above
-precede the removal fixes; this round does not update or re-test that phone.
+The destructive removal checks used the API 35 emulator. Mive was subsequently
+updated from a fresh backup: the initial combined download preserved its data,
+and the final matching base/split APKs and delivery cache were installed through
+ADB. All nine dictionary/personal/metadata table hashes and default preferences
+were identical before and after the final update. The official TT9 package was
+left untouched; the test app's install-source permission was restored to Off.
+
+This Mive run reproduced a separate panel continuation bug: after held Down/Up,
+a short Up collapsed the panel, but the next Up was counted as a repeated spelling
+filter and stayed on Han candidates. Resetting the legacy same-key counter at
+the actual panel-to-row transition fixes that sequence. The final installed build
+passed held scrolling and release, six 28-pixel rows with per-row numbering,
+collapse → full spelling list → native Pinyin caret → delete/insert → Han, and
+reopening the full spelling list after the edit. No test words were committed.
+These are injected-key checks, not a new physical-keypad scanner test; removal
+was not exercised on the user's phone.
 
 ## Reproduce the debug build
 
@@ -432,6 +447,9 @@ path. Verify the following on the minified build:
    release checks. Cycle Han → spellings → Pinyin edit → Han → spellings, checking
    the whole alternative list after each cycle. Include rapid Up/Up, immediate
    insert/delete → Down/confirm → Up, no-match input, and Back cancellation.
+   Expand candidates, hold Down then Up to reach the first row, release, and
+   press Up to collapse. The next Up must open the full spelling list; another
+   Up must edit Pinyin, and Down must return to Han candidates.
    Restart input while editing and confirm that the old cursor override does not
    survive; separate fixture-triggered composing-disable behavior as noted above.
 4. Add/edit/export/import a word with an explicit reading; test fuzzy and

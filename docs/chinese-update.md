@@ -9,7 +9,7 @@
 - 修复简体中文无法切换、关闭全局英文预测后无法输入中文，以及输入不完整拼音时过早提交候选的问题。
 - 增加紧凑多行候选，保留自然词宽和竖线分隔。下键展开；首行再短按上键收回单行；返回键也可收回。
 - 默认展开行与普通单行候选条等高。“宽松候选区”默认关闭，开启后仅适度增加行高和左右留白；不再提供旧的“紧凑”开关。快速反复展开、收起会复用原始单行尺寸，避免行高累积变化。
-- 展开候选和拼音选择支持长按方向键滚动。修复快速连按导致的分隔错位、松开后多走一步，以及选择拼音后无法正常展开的问题。
+- 展开候选和拼音选择支持长按方向键滚动。修复快速连按导致的分隔错位、松开后多走一步，以及选择拼音后无法正常展开的问题。收起展开面板后，再按上键可以正常进入拼音栏，避免被误当成连续筛选。
 - 普通单行候选也支持长按左右键连续选择，中英文共用主包中的“候选条滚动速度”（慢速／标准／快速）。中文展开面板单独提供滚动速度设置。长按单行候选到达首尾后停止，短按保留原有循环切换。
 - 展开候选每行独立重复标注 1–9，数字选择当前高亮框所在行的词。每行最多九项；不存在的数字不会选到其他行。数字直选可在中文设置中关闭。
 - 一次上键选择拼音，两次上键编辑拼音。左右键移动光标，数字键插入，退格删除光标前一位；支持的编辑器使用系统组词光标，拒绝组词选区的编辑器保留可见的兼容光标。下键或确认返回汉字候选，返回键取消本轮修改。
@@ -52,7 +52,7 @@ This document describes a contribution to upstream Traditional T9 and can be use
 - Fixes Simplified Chinese activation, Chinese input when global alphabetic prediction is disabled, and premature commits while typing incomplete Pinyin.
 - Adds compact, naturally sized multirow candidates with vertical separators. Down expands; a short Up on the first row or Back returns to the single row.
 - Expanded rows default to the ordinary candidate row's measured height. A default-off Roomy candidates option modestly increases height and side spacing, replacing the old Compact switch. Rapid collapse/reopen retains the original single-row baseline rather than compounding expanded sizes.
-- Supports held-arrow scrolling in expanded candidates and Pinyin choices. Fixes separator corruption during rapid navigation, extra movement on release, and expansion after selecting a reading.
+- Supports held-arrow scrolling in expanded candidates and Pinyin choices. Fixes separator corruption during rapid navigation, extra movement on release, and expansion after selecting a reading. After collapsing the panel, the next Up opens spellings instead of being miscounted as repeated filtering.
 - Adds held Left/Right navigation to ordinary single-row candidates in all languages. The host Keypad screen offers Slow/Normal/Fast speed; Chinese expanded candidates have an independent speed setting in the optional feature. Held single-row navigation stops at either end; short taps retain cyclic selection.
 - Repeats numeric labels 1–9 on every expanded row. Number keys select within the highlighted candidate's row. Rows contain at most nine candidates; absent positions never select from another row. This selection mode can be disabled in Chinese settings.
 - One Up selects a reading; a second Up edits Pinyin. Left/Right move the caret, number keys insert, and Backspace deletes before it. Supported editors use their actual system composing caret; editors that reject composing selection retain a visible compatibility cursor. Down/confirm returns to Han candidates; Back cancels the current edit.

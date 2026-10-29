@@ -169,6 +169,8 @@ abstract public class MainViewHandler extends HotkeyHandler {
 		int horizontal = keyCode == KeyEvent.KEYCODE_DPAD_LEFT ? -1 : keyCode == KeyEvent.KEYCODE_DPAD_RIGHT ? 1 : 0;
 		int vertical = keyCode == KeyEvent.KEYCODE_DPAD_UP ? -1 : keyCode == KeyEvent.KEYCODE_DPAD_DOWN ? 1 : 0;
 		suggestionOps.moveInGrid(horizontal, vertical, !isCandidateArrowRepeating());
+		// The Up that closes the panel must not count as the first press of the spelling filter.
+		if (!suggestionOps.isExpanded()) resetKeyRepeat();
 		mInputMode.setWordStem(suggestionOps.getCurrent(), true);
 		appHacks.setComposingTextWithHighlightedStem(suggestionOps.getCurrent(), mInputMode.getWordStem(), mInputMode.isStemFilterFuzzy());
 		mainView.renderDynamicKeys();
