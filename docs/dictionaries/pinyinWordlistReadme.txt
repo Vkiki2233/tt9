@@ -28,6 +28,35 @@ Examples: 你好 NIHAO 7002 > 米糕 MIGAO 4796; 你 NI 7801 > 谧 MI 4934.
 All word-and-reading pairs and their row order are preserved. No source dictionaries or additional runtime dependencies are bundled.
 These are factory defaults; personal learning remains managed by the existing input method.
 
+Polyphonic-reading completeness repair (2026-10-28, issue #903):
+The same pinned Rime Ice 8105.dict.yaml snapshot was audited by exact
+(character, Pinyin) pair against all existing factory BMP characters. Its 8,341
+active readings for 7,944 supported characters are now present. This appends 393
+missing readings for 372 characters, including 长 ZHANG, 乐 YUE, 得 DEI,
+单 DAN/SHAN, 着 ZHE/ZHUO and 嗯 ENG. All 482,284 preceding rows, their order,
+and their weights are unchanged; the dictionary now has 482,677 pairs.
+No new characters or supplementary-plane readings are added. Commented-out
+source readings remain excluded. Three active source readings have weight zero
+(了 LIAO, 鿎 TA, 育 YO); they remain typeable rather than being discarded.
+The existing logarithmic formula gives the added readings their factory weights;
+390 are positive, bringing the total to 463,920 positive and 18,757 zero weights.
+This is completeness against the reviewed snapshot for supported BMP characters,
+not a claim that it contains every Mandarin reading or regional pronunciation.
+
+app/languages/chinese/polyphonic-readings.tsv records all 772 reviewed source
+readings of the 375 supported characters with multiple source or legacy
+readings, together with their raw weights and exact source line numbers.
+The source-backed repair is repeatable and idempotent:
+  python tools/repair_chinese_readings.py /path/to/8105.dict.yaml
+  python tools/repair_chinese_readings.py /path/to/8105.dict.yaml --check
+The tool verifies the source SHA-256 before writing. It never deduplicates by
+character or changes an existing word/reading pair. Its regression suite is:
+  python tools/test_repair_chinese_readings.py
+The production parser, digit converter, sorter and ZIP writer are also exercised
+by tools/test_chinese_reading_conversion.groovy (arguments: repository root and
+an output directory), using groovy.ui.GroovyMain with the Gradle lib/* classpath.
+That fixture verifies all 772 reviewed pairs survive conversion exactly once.
+
 Rime Ice specifies GPL-3.0-only for its curated dictionary data. The Rime-derived
 frequencies and generated ranking data are distributed under those terms; the
 TT9 application source retains its existing Apache-2.0 license. Original list

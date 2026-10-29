@@ -134,9 +134,23 @@ public class ChinesePredictions extends IdeogramPredictions {
 		if (request != generation.get() || packGeneration != ChinesePack.getGeneration()) return;
 		refreshCaches();
 		String digits = digitSequence;
+		if (completionsAllowed && digits.length() == 1 && stem.isEmpty()) {
+			ChinesePrefixIndex index = prefixes();
+			if (index != null) {
+				ArrayList<String> frequentCharacters = new ArrayList<>();
+				for (ChinesePrefixIndex.Entry entry : index.lookupFirstKey(digits, stem, ChinesePrefixIndex.MAX_FIRST_KEY_RESULTS)) {
+					String raw = entry.transcription + entry.word;
+					if (allowed(raw)) frequentCharacters.add(raw);
+				}
+				// Preserve promoted/learned leading rows and personal words; frequent prefix characters
+				// supplement exact vowel readings without scanning all dictionary rows on every key.
+				dbWords = dbWords.isEmpty() ? frequentCharacters : ChineseCandidateRanking.merge(dbWords, frequentCharacters,
+					index::singleCharacterFrequency, raw -> DataStore.isCustomWord(language, raw));
+			}
+		}
 		ArrayList<String> phoneticSnapshot = new ArrayList<>(dbWords);
 		ArrayList<String> completed = new ArrayList<>(dbWords);
-		if (completionsAllowed && settings.getChinesePrefixCompletion() && !dbWords.isEmpty()) {
+		if (completionsAllowed && digits.length() > 1 && settings.getChinesePrefixCompletion() && !dbWords.isEmpty()) {
 			ChinesePrefixIndex index = prefixes();
 			if (index != null) {
 				String first = nativeWord(dbWords.get(0));

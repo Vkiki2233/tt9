@@ -13,6 +13,7 @@ import java.util.List;
 public final class ChinesePrefixIndex {
 	public static final String FILE_NAME = "zh-simplified-prefixes.bin";
 	public static final int MAX_DIRECT_RESULTS = 16;
+	public static final int MAX_FIRST_KEY_RESULTS = 32;
 	public static final int MIN_FREQUENCY = 5000;
 	public static final int MIN_PRIMARY_CHARACTER_FREQUENCY = 5800;
 	private static final int MAGIC = 0x54543950; // TT9P
@@ -22,9 +23,11 @@ public final class ChinesePrefixIndex {
 	private final int[] phraseOffsets;
 	private final int[] prefixOffsets;
 	private final int[] singleCharacterOffsets;
+	private final List<List<Entry>> firstKeyCharacters = new ArrayList<>(8);
 
 	private ChinesePrefixIndex(byte[] data) throws IOException {
 		this.data = data;
+		for (int i = 0; i < 8; i++) firstKeyCharacters.add(new ArrayList<>());
 		Cursor cursor = new Cursor(data, 0);
 		int magic = cursor.integer(), version = cursor.integer();
 		if (magic != MAGIC || version < 1 || version > VERSION) {
@@ -60,7 +63,9 @@ public final class ChinesePrefixIndex {
 		for (int i = 0; i < singleCharacterCount; i++) {
 			singleCharacterOffsets[i] = cursor.position;
 			String raw = cursor.string();
-			if (raw.compareTo(previous) <= 0 || cursor.integer() < MIN_PRIMARY_CHARACTER_FREQUENCY) throw new IOException("Invalid Chinese character frequencies");
+			int frequency = cursor.integer();
+			if (raw.compareTo(previous) <= 0 || frequency < MIN_PRIMARY_CHARACTER_FREQUENCY) throw new IOException("Invalid Chinese character frequencies");
+			indexFirstKeyCharacter(raw, frequency);
 			previous = raw;
 		}
 		if (cursor.position != data.length) throw new IOException("Unexpected Chinese prefix index data");
@@ -86,6 +91,35 @@ public final class ChinesePrefixIndex {
 	}
 
 	public boolean hasSingleCharacterFrequencies() { return singleCharacterOffsets.length != 0; }
+
+	/** Frequent characters for a first key, even when an exact vowel reading already exists. */
+	public List<Entry> lookupFirstKey(String digits, String selectedReading, int limit) {
+		if (digits == null || digits.length() != 1 || digits.charAt(0) < '2' || digits.charAt(0) > '9'
+			|| selectedReading != null && !selectedReading.isEmpty() || limit <= 0) return Collections.emptyList();
+		List<Entry> bucket = firstKeyCharacters.get(digits.charAt(0) - '2');
+		return new ArrayList<>(bucket.subList(0, Math.min(limit, bucket.size())));
+	}
+
+	private void indexFirstKeyCharacter(String raw, int frequency) throws IOException {
+		int nativeStart = 0;
+		while (nativeStart < raw.length() && raw.charAt(nativeStart) >= 'A' && raw.charAt(nativeStart) <= 'Z') nativeStart++;
+		if (nativeStart == 0 || nativeStart >= raw.length() || raw.codePointCount(nativeStart, raw.length()) != 1) {
+			throw new IOException("Invalid Chinese single-character reading");
+		}
+		Entry entry = new Entry(raw.substring(nativeStart), raw.substring(0, nativeStart), frequency);
+		List<Entry> bucket = firstKeyCharacters.get(entry.sequence.charAt(0) - '2');
+		for (int i = 0; i < bucket.size(); i++) {
+			if (!bucket.get(i).word.equals(entry.word)) continue;
+			if (bucket.get(i).frequency >= frequency) return;
+			bucket.remove(i);
+			break;
+		}
+		int position = 0;
+		while (position < bucket.size() && bucket.get(position).frequency >= frequency) position++;
+		if (position >= MAX_FIRST_KEY_RESULTS) return;
+		bucket.add(position, entry);
+		if (bucket.size() > MAX_FIRST_KEY_RESULTS) bucket.remove(MAX_FIRST_KEY_RESULTS);
+	}
 
 	/** The stream is a raw ZIP entry or its extracted file; ownership remains with the caller. */
 	public static ChinesePrefixIndex load(InputStream stream) throws IOException {

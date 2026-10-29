@@ -70,6 +70,7 @@ public class ChineseSettingsScreen extends BaseScreenFragment {
 			}
 			bindSwitch("pref_chinese_number_select", ChineseCandidateSettings.getNumberSelect(activity.getSettings()));
 			bindSwitch("pref_chinese_prefix_completion", activity.getSettings().getChinesePrefixCompletion());
+			bindSwitch("pref_chinese_commit_on_language_switch", activity.getSettings().getChineseCommitOnLanguageSwitch());
 			bindSwitch("pref_chinese_common_only", activity.getSettings().getChineseCommonOnly());
 			String[] fuzzy = {"nl", "z_zh", "c_ch", "s_sh", "en_eng", "in_ing"};
 			int options = activity.getSettings().getChineseFuzzyOptions();

@@ -74,6 +74,39 @@ public class ChinesePrefixIndexTest {
 		ChinesePrefixIndex index = fixture();
 		assertFalse(index.hasSingleCharacterFrequencies());
 		assertEquals(0, index.singleCharacterFrequency("NI你"));
+		assertTrue(index.lookupFirstKey("6", "", 9).isEmpty());
+	}
+
+	@Test public void firstKeyIncludesFrequentCharactersAlongsideExactVowels() throws IOException {
+		ChinesePrefixIndex index = characterFixture(Map.of("DE的", 9999, "DEI得", 9000, "E饿", 7332, "EN嗯", 7000));
+		assertEquals(List.of("的", "得", "饿", "嗯"), index.lookupFirstKey("3", "", 9).stream().map(entry -> entry.word).collect(Collectors.toList()));
+		assertEquals("33", index.lookupFirstKey("3", "", 1).get(0).sequence);
+		assertEquals(List.of("E饿", "DE的", "DEI得", "EN嗯"), ChineseCandidateRanking.merge(List.of("E饿"),
+			List.of("DE的", "DEI得", "E饿", "EN嗯"), index::singleCharacterFrequency, word -> false));
+	}
+
+	@Test public void firstKeyBucketsCoverTheKeypadWithoutCrossingSelectedReadings() throws IOException {
+		ChinesePrefixIndex index = characterFixture(Map.of("BA八", 6000, "DE的", 9999, "GUO国", 8000, "LE了", 9500,
+			"NI你", 7801, "SHI是", 9506, "TA他", 9000, "WO我", 9472));
+		String[] expected = {"八", "的", "国", "了", "你", "是", "他", "我"};
+		for (int key = 2; key <= 9; key++) assertEquals(expected[key - 2], index.lookupFirstKey(Integer.toString(key), "", 9).get(0).word);
+		for (String digits : new String[]{null, "", "1", "0", "64", "a"}) assertTrue(index.lookupFirstKey(digits, "", 9).isEmpty());
+		assertTrue(index.lookupFirstKey("6", "NI", 9).isEmpty());
+		assertTrue(index.lookupFirstKey("6", "", 0).isEmpty());
+	}
+
+	@Test public void firstKeyResultsAreBoundedDeduplicatedAndKeepPromotedLeadingRows() throws IOException {
+		Map<String, Integer> weights = new TreeMap<>();
+		for (int i = 0; i < 50; i++) weights.put("NI" + (char) (0x4e00 + i), 6000 + i);
+		weights.put("NE" + (char) (0x4e00 + 49), 7000);
+		ChinesePrefixIndex index = characterFixture(weights);
+		List<ChinesePrefixIndex.Entry> entries = index.lookupFirstKey("6", "", 1000);
+		assertEquals(ChinesePrefixIndex.MAX_FIRST_KEY_RESULTS, entries.size());
+		assertEquals(7000, entries.get(0).frequency);
+		assertEquals(entries.size(), entries.stream().map(entry -> entry.word).distinct().count());
+		assertEquals(List.of("NI罕", "NI你", "NI自", "NI新"), ChineseCandidateRanking.merge(
+			List.of("NI罕", "NI你", "NI自"), List.of("NI新"), word -> "NI你".equals(word) ? 7801 : 0,
+			word -> "NI自".equals(word)));
 	}
 
 	@Test

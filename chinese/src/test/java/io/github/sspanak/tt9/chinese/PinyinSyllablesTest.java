@@ -2,6 +2,9 @@ package io.github.sspanak.tt9.chinese;
 
 import org.junit.Test;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,6 +43,28 @@ public class PinyinSyllablesTest {
 		assertEquals("9426", PinyinSyllables.getSequence("xi'an"));
 		assertEquals("6442662", PinyinSyllables.getSequence("ni hao ma"));
 		assertEquals("NV", PinyinSyllables.compact("nü"));
+	}
+
+	@Test public void restoredColloquialReadingsWorkInFilteringAndPersonalWords() {
+		for (String reading : List.of("DEI", "LO", "TEI")) {
+			assertTrue(PinyinSyllables.isSyllable(reading));
+			assertEquals(reading, PinyinSyllables.parseUserReading(reading, 1));
+			assertEquals(List.of(reading), PinyinSyllables.segment(reading, 1));
+		}
+		assertEquals(List.of("DEI"), PinyinSyllables.choicesForStoredWord("DEI得"));
+		assertTrue(PinyinSyllables.matchesSelectedReading("TEI忒", "TEI"));
+	}
+
+	@Test public void everyReviewedFactoryReadingCanBeSelectedAndParsed() throws IOException {
+		String manifest = System.getProperty("tt9.chineseReadings");
+		assertNotNull("The test task must provide the reviewed Chinese readings", manifest);
+		for (String line : Files.readAllLines(Paths.get(manifest))) {
+			if (line.startsWith("#") || line.isEmpty()) continue;
+			String[] fields = line.split("\t");
+			assertTrue("Unsupported reviewed reading: " + line, PinyinSyllables.isSyllable(fields[1]));
+			assertEquals(fields[1], PinyinSyllables.parseUserReading(fields[1], 1));
+			assertTrue(PinyinSyllables.matchesSelectedReading(fields[1] + fields[0], fields[1]));
+		}
 	}
 
 	@Test(expected = IllegalArgumentException.class) public void ambiguousUserReadingNeedsExplicitBoundaries() { PinyinSyllables.parseUserReading("changan", 2); }

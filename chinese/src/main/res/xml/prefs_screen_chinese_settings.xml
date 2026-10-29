@@ -17,6 +17,8 @@
 		app:title="@string/pref_chinese_number_select" app:summary="@string/pref_chinese_number_select_summary" />
 	<SwitchPreferenceCompat app:key="pref_chinese_prefix_completion" app:persistent="false" app:defaultValue="true"
 		app:title="@string/pref_chinese_prefix_completion" app:summary="@string/pref_chinese_prefix_completion_summary" />
+	<SwitchPreferenceCompat app:key="pref_chinese_commit_on_language_switch" app:persistent="false" app:defaultValue="true"
+		app:title="@string/pref_chinese_commit_on_language_switch" app:summary="@string/pref_chinese_commit_on_language_switch_summary" />
 	<SwitchPreferenceCompat app:key="pref_chinese_common_only" app:persistent="false" app:defaultValue="false"
 		app:title="@string/pref_chinese_common_only" app:summary="@string/pref_chinese_common_only_summary" />
 	<PreferenceCategory app:title="@string/pref_chinese_fuzzy">

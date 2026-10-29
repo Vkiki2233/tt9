@@ -67,6 +67,22 @@ public class ChinesePrefixFactoryTest {
 		assertEquals("你好吗", index.lookup("你好", 12).get(0).word);
 	}
 
+	@Test public void firstKeyFindsCommonCharactersBeyondExactVowelReadings() {
+		assertTrue(index.lookupFirstKey("3", "", 32).stream().anyMatch(entry -> entry.word.equals("的") && entry.transcription.equals("DE")));
+		assertTrue(index.lookupFirstKey("6", "", 32).stream().anyMatch(entry -> entry.word.equals("你") && entry.transcription.equals("NI")));
+		for (int key = 2; key <= 9; key++) {
+			String digits = Integer.toString(key);
+			List<ChinesePrefixIndex.Entry> entries = index.lookupFirstKey(digits, "", 1000);
+			assertTrue(!entries.isEmpty() && entries.size() <= ChinesePrefixIndex.MAX_FIRST_KEY_RESULTS);
+			int lastFrequency = Integer.MAX_VALUE;
+			for (ChinesePrefixIndex.Entry entry : entries) {
+				assertTrue(entry.sequence.startsWith(digits));
+				assertTrue(entry.frequency <= lastFrequency);
+				lastFrequency = entry.frequency;
+			}
+		}
+	}
+
 	@Test
 	public void factoryIndexFitsTheFlipPhoneMemoryBudget() throws IOException {
 		assertTrue("Keep the raw index below 3 MiB", Files.size(indexPath) < 3 * 1024 * 1024);

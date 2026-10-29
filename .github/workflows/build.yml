@@ -40,8 +40,8 @@ jobs:
       run: ./gradlew copyDownloadsToAssets
     - name: Test shared input and optional Chinese module
       run: ./gradlew :app:testLiteDebugUnitTest :chinese:testLiteDebugUnitTest
-    - name: Test Chinese release asset validation
-      run: python3 -m unittest discover -s tools -p test_chinese_release.py -v
+    - name: Test Chinese reading repair and release asset validation
+      run: python3 -m unittest discover -s tools -p 'test_*.py' -v
     - name: Lint
       run: ./gradlew lint # this actually runs mergeResources, so it must come after the dictionary tasks
     - name: Validate matching Chinese release packaging without signing secrets
@@ -56,6 +56,7 @@ jobs:
         groovy=$(find "${GRADLE_USER_HOME:-$HOME/.gradle}/wrapper/dists" -name 'groovy-[0-9]*.jar' -print -quit)
         test -n "$groovy"
         java -cp "$groovy" groovy.ui.GroovyMain tools/test_chinese_delivery.groovy
+        java -cp "$(dirname "$groovy")/*" groovy.ui.GroovyMain tools/test_chinese_reading_conversion.groovy "$PWD" app/build/reading-conversion-test
     - name: Upload debug-signed packaging evidence (not release assets)
       uses: actions/upload-artifact@v4
       with:

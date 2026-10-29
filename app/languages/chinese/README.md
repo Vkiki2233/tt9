@@ -39,7 +39,7 @@ and the continuation has a factory weight of at least 5000. Only referenced
 phrases are stored. The current raw index is about 1.8 MiB; loading it retains
 the packed bytes and about 0.3 MiB of record offsets instead of a large word map.
 
-Index format V2 also stores 2,480 frequent single-character readings and their
+Index format V2 also stores 2,581 frequent single-character readings and their
 original weights, adding about 30 KiB. A weight of at least 5800 on the existing
 logarithmic scale, together with membership in the 3,500-character core table,
 identifies ordinary single-character choices. They precede phrase completions;
@@ -57,3 +57,12 @@ This is a bounded offline completion index, not a sentence language model. It
 does not invent phrases or search the full factory dictionary on each keypress.
 Uncommon continuations remain available through ordinary Pinyin input; user
 words are handled separately from this factory index.
+
+`polyphonic-readings.tsv` records the reviewed Rime Ice source readings, raw
+weights and line numbers for 375 supported BMP characters with multiple source
+or legacy readings. The source-hash-verified repair tool
+`tools/repair_chinese_readings.py` appends missing exact word/reading pairs while
+preserving every existing row and weight. The 2026-10-28 audit restored 393
+readings; the dictionary now has 482,677 pairs. No new characters or
+supplementary-plane readings were introduced. See
+`docs/dictionaries/pinyinWordlistReadme.txt` for scope and reproduction commands.

@@ -102,6 +102,8 @@
 	<string name="pref_auto_space">Automatic Space</string>
 	<string name="pref_auto_space_summary">Automatically add a space after punctuation or words.</string>
 	<string name="pref_auto_text_case">Automatic Capitalization</string>
+	<string name="pref_english_writing_suggestions">English Writing Suggestions</string>
+	<string name="pref_english_writing_suggestions_summary">Suggest English contractions, abbreviations and short phrases from letter-only shortcuts.</string>
 	<string name="pref_auto_text_case_summary">Automatically start sentences with a capital letter. (Not possible in all languages)</string>
 	<string name="pref_auto_trim_trailing_space">Automatically Trim Trailing Whitespace</string>
 	<string name="pref_auto_trim_trailing_space_summary">Automatically remove extra spaces when moving the cursor back.</string>

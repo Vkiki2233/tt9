@@ -202,6 +202,7 @@ android {
 		systemProperty 'tt9.chineseDictionary', chineseDictionary.absolutePath
 		inputs.file(chineseDictionary)
 		inputs.file(file('languages/definitions/ChineseSimplifiedPinyin.yml'))
+		inputs.file(file('languages/chinese/polyphonic-readings.tsv'))
 	}
 
 	flavorDimensions = ['app']

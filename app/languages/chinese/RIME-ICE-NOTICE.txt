@@ -19,12 +19,20 @@ the inputs exactly. The upstream main branch continues to change.
 
 TT9 changes: exact word-and-reading matches are assigned
 round(9999 * log(1 + source_weight) / log(1 + 76938354)); unmatched or zero
-source weights become zero. Of 482,284 retained word-and-reading pairs,
-463,977 match the sources and 463,530 have positive weights. The original
-word-and-reading rows and alternative readings remain available. The original
+source weights become zero. The 2026-10-28 reading audit appends 393 missing
+readings for existing BMP characters using the same scale and pinned source;
+all preceding 482,284 rows and weights remain unchanged. Of the resulting
+482,677 word-and-reading pairs, 464,370 match the sources and 463,920 have
+positive weights. The original rows and alternative readings remain available. The original
 TT9 list was contributed by Vkiki2233: https://github.com/sspanak/tt9/issues/260
 The additional SHUO / XING / ZHONG / LV readings and their source provenance
 are documented in docs/dictionaries/pinyinWordlistReadme.txt.
+The subsequent audit covers all 8,341 active source readings of 7,944 factory
+BMP characters. It adds no characters or supplementary-plane readings and
+does not enable commented-out source rows. The reviewed polyphonic pairs, raw
+weights and source line numbers are recorded in polyphonic-readings.tsv;
+tools/repair_chinese_readings.py verifies the pinned source hash and restores
+missing exact pairs without replacing existing rows.
 
 The Rime-derived frequency data, including their transformed dictionary
 ordering and generated phrase-prefix / primary-character frequency index,
@@ -42,6 +50,8 @@ in the matching TT9 source distribution:
   app/build-chinese-pack.gradle
   app/languages/chinese/RIME-ICE-LICENSE.txt
   app/languages/chinese/RIME-ICE-NOTICE.txt
+  app/languages/chinese/polyphonic-readings.tsv
+  tools/repair_chinese_readings.py
 Build the word ZIP with buildDictionaryDownloads and the compact index with
 buildChinesePrefixIndex. Use the source tree/patch matching this distribution,
 not a later upstream download. Full original Rime dictionaries are not needed

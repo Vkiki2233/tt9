@@ -85,6 +85,8 @@
 	<string name="pref_auto_space">自动空格</string>
 	<string name="pref_auto_space_summary">自动在标点或字词后添加空格。</string>
 	<string name="pref_auto_text_case">自动大写</string>
+	<string name="pref_english_writing_suggestions">英文写作建议</string>
+	<string name="pref_english_writing_suggestions_summary">通过纯字母缩写提供英文缩略形式、缩写和短语建议。</string>
 	<string name="pref_auto_text_case_summary">自动将句首字母大写。（部分语言不支持）</string>
 	<string name="pref_auto_trim_trailing_space">自动清理末尾空格</string>
 	<string name="pref_auto_trim_trailing_space_summary">光标回退时，自动删除多余的空格。</string>

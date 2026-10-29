@@ -4,6 +4,16 @@
 
 本文供 Traditional T9 上游贡献、代码审查和后续版本说明使用。本次更新面向有实体数字键和方向键的 Android 翻盖机、按键机，正常使用保留候选区即可，不要求显示屏幕数字键盘。
 
+### #903 / #1051 后续修复
+
+- 从已记录来源及哈希的 Rime Ice 字表补回 393 组缺失读音，涉及 372 个现有 BMP 汉字。本轮修复保留此前词频整理后的全部 482,284 组词音、顺序和权重，现共 482,677 组；不新增汉字。提供可重复运行的修复脚本、来源清单及生产 ZIP 转换回归检查。同步支持 `DEI`、`LO`、`TEI` 音节，保证新读音也能筛选、编辑和添加为个人词。
+- 单键输入补充高频单字，避免 `E` 等精确读音遮挡“的”等其他常用字。使用现有索引中的有界缓存，保留学习词和个人词的优先级。
+- 切换语言前默认确认当前汉字候选，可在中文输入设置关闭。拼音选择、编辑及尚未完成的转换预览不会被作为文字提交。
+- 主包增加可关闭的英文缩写候选，如 `im` / `iam`、`dont`、`ive`、`eg`。普通精确候选、词对首选和个人词保留优先级，扩展通过选择候选使用；沿用原有自动和手动大小写规则。邮箱、网址、密码等结构化输入框不提供这些候选。
+- 大写拼音继续使用 `V` 表示 ü；个人读音输入仍接受 `ü`、`u:` 和 `v`，存储和导出沿用原格式。
+
+此轮处理已确认的词库及输入行为缺口。首字母简拼、实时空格分音节、通用符号数字直选、按住确认键录音和自定义命令面板仍属于独立交互功能；整句及下一词预测继续留作后续工作，不将整个 #1051 标记为已完成。
+
 ### 输入与选词
 
 - 修复简体中文无法切换、关闭全局英文预测后无法输入中文，以及输入不完整拼音时过早提交候选的问题。
@@ -14,7 +24,7 @@
 - 展开候选每行独立重复标注 1–9，数字选择当前高亮框所在行的词。每行最多九项；不存在的数字不会选到其他行。数字直选可在中文设置中关闭。
 - 一次上键选择拼音，两次上键编辑拼音。左右键移动光标，数字键插入，退格删除光标前一位；支持的编辑器使用系统组词光标，拒绝组词选区的编辑器保留可见的兼容光标。下键或确认返回汉字候选，返回键取消本轮修改。
 - 修复编辑后重新选拼音时列表被旧读音筛选锁住的问题，重新打开会恢复整串按键对应的拼音候选；正常的 `XIAN` 不再与编辑预览混淆。快速连按两次上键会等当前拼音列表显示后再编辑，不会用旧候选截短输入。插入或删除后立即确认会等待读音解析；无匹配或超时后仍可修改，并可按返回恢复本轮编辑前的输入。
-- 重新整理默认词频，保留全部 482,284 组词语与读音，修正部分多音字的默认读音，并去除候选栏里的重复汉字。
+- 重新整理默认词频，保留原有全部 482,284 组词语与读音，并补回 393 组有来源的缺失读音，修正部分多音字的默认读音，并去除候选栏里的重复汉字。
 - 不完整输入也能进入拼音编辑：例如 `745` 的拼音候选显示 `RI'LE` 时，编辑的是实际输入的 `RIL`。未修改就返回会保留原读音边界；修改后也保留解析到的音节分隔，避免把 `XI'AN` 误当作 `XIAN`。
 - 增加离线汉字前缀补全，例如输入“你”的读音时可以找到“你好”“你好吗”。常用的精确单字排在补全词组前，次级单字排在后；已学习的首选候选和个人词条保留优先级。
 
@@ -41,11 +51,21 @@
 
 ### 当前范围
 
-联想目前是本轮输入中的离线前缀补全。提交后无需按键的下一词预测、整句语言模型和逐段确认仍是后续功能；已支持音节分隔和读音修改。不同厂商的实体按键扫描、编辑器和安装限制仍需设备验证，问题报告应包含型号、Android 版本及复现按键顺序。
+联想目前是本轮输入中的离线前缀补全。提交后无需按键的下一词预测、整句语言模型和逐段确认仍是后续功能。已支持个人读音及拼音选择中的音节边界和读音修改；尚未实现输入时按空格实时分段。不同厂商的实体按键扫描、编辑器和安装限制仍需设备验证，问题报告应包含型号、Android 版本及复现按键顺序。
 
 ## English
 
 This document describes a contribution to upstream Traditional T9 and can be used for code review and future release notes. The changes target Android flip phones and feature phones with physical number keys and a D-pad. Normal keypad use needs only the candidate area; an on-screen number pad is unnecessary.
+
+### Follow-up fixes for #903 / #1051
+
+- Restore 393 missing readings for 372 existing BMP characters from the pinned, hash-verified Rime Ice source. This repair preserves all 482,284 pre-existing pairs, row order and weights from the earlier frequency refresh; the dictionary now contains 482,677 pairs and no new characters. The repeatable repair tool, provenance manifest and production ZIP conversion checks protect the distinct readings. Add `DEI`, `LO` and `TEI` to runtime syllable handling too.
+- Supplement one-key input with frequent characters using bounded buckets in the existing index, including when an exact vowel such as `E` already matches. Learned and personal choices retain priority.
+- Commit the selected Han candidate before changing languages by default, with a Chinese setting to disable this. Spelling choices, edits and unresolved previews are excluded.
+- Add optional English shortcut candidates in the host, including `im` / `iam`, `dont`, `ive` and `eg`. Ordinary exact candidates, word-pair selections and personal words retain priority; expansions are selected explicitly. Existing automatic and manual case controls remain intact. Structured fields such as email, URL and password inputs do not offer these shortcuts.
+- Retain uppercase `V` for Pinyin display and storage. Personal reading entry still accepts `ü`, `u:` and `v`.
+
+This follow-up addresses confirmed dictionary and input-behavior gaps. Initials-only Pinyin, live space-separated composition, generic numeric symbol selection, hold-to-record voice and command-panel customization remain separate interaction features. Sentence and post-commit prediction remain future work; this does not resolve every request in #1051.
 
 ### Input and candidate selection
 
@@ -57,7 +77,7 @@ This document describes a contribution to upstream Traditional T9 and can be use
 - Repeats numeric labels 1–9 on every expanded row. Number keys select within the highlighted candidate's row. Rows contain at most nine candidates; absent positions never select from another row. This selection mode can be disabled in Chinese settings.
 - One Up selects a reading; a second Up edits Pinyin. Left/Right move the caret, number keys insert, and Backspace deletes before it. Supported editors use their actual system composing caret; editors that reject composing selection retain a visible compatibility cursor. Down/confirm returns to Han candidates; Back cancels the current edit.
 - Restores the full spelling list when reopening it after an edit, removes the collision between an ordinary `XIAN` candidate and its old editing preview, and queues rapid Up/Up until the current spelling list is shown so stale candidates cannot truncate the input. Confirmation immediately after insertion/deletion waits for reading resolution. A no-match or timeout leaves the text editable, and Back restores the input from before the edit.
-- Revises default frequencies while retaining all 482,284 word/reading pairs, corrects several polyphonic defaults, and deduplicates displayed Han candidates.
+- Revises default frequencies while retaining all original 482,284 word/reading pairs, restores 393 sourced missing readings, corrects several polyphonic defaults, and deduplicates displayed Han candidates.
 - Allows editing an incomplete reading: when `745` shows `RI'LE`, the editor opens only the typed `RIL`. Returning unchanged retains the selected syllable boundaries; edited readings also retain their resolved separators so `XI'AN` cannot silently become `XIAN`.
 - Adds offline Han-prefix completion, including 你好 and 你好吗 while composing the reading for 你. Frequent exact single characters precede completions; secondary characters follow them. Learned leading candidates and explicit custom words retain priority.
 
@@ -84,4 +104,4 @@ The implementation uses Android-signed splits and the system installation prompt
 
 ### Current scope
 
-Completion operates on the current composition using an offline prefix index. Zero-key prediction after commit, a sentence language model, and incremental segment confirmation remain future work. Syllable boundaries and reading editing are supported. Vendor key scanning, editor behavior, and installation restrictions still require device validation; reports should include the phone model, Android version, and exact key sequence.
+Completion operates on the current composition using an offline prefix index. Zero-key prediction after commit, a sentence language model, and incremental segment confirmation remain future work. Personal readings and selected Pinyin preserve syllable boundaries and support reading edits; live Space segmentation is not implemented. Vendor key scanning, editor behavior, and installation restrictions still require device validation; reports should include the phone model, Android version, and exact key sequence.

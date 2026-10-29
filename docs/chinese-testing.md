@@ -4,7 +4,40 @@ This is the verification record and reproduction guide for the upstream Chinese
 input contribution. See [the update description](chinese-update.md) for scope and
 [the extension notes](chinese-extension.md) for the package layout.
 
-## Current results
+## Current #903 / #1051 follow-up results
+
+| Check | Result |
+| --- | --- |
+| Host and Chinese feature unit tests | 243 passing in Full and 243 in Lite (96 host, 147 feature per flavor) |
+| Python repair and release validation | 20 tests passing; pinned-source repair check reports no missing additions |
+| Production dictionary conversion | All 772 reviewed polyphonic pairs occur exactly once after the real parser, sorter, digit converter and ZIP writer; license entries retained |
+| Debug APK and matching combined pack | Full and Lite builds passed |
+| Lite release with R8 and resource shrinking | APK and matching combined pack built with a local test signature |
+| Lite debug and release lint | 0 errors, 389 warnings per variant, including missing translations for the two new English preference strings in other locales |
+| API 35 Lite debug dictionary import | Production local-pack loader imported 482,677 rows; all 393 restored readings occur exactly once |
+| API 35 Full debug installed engine | 30 checks passed with the actual Chinese and bundled English dictionaries |
+
+The installed-engine checks cover 14 selected polyphonic readings, frequent Han
+candidates for single keys 3 and 6, preservation of exact `E` and its explicit
+filter, all ten English shortcut key sequences, and suppression when disabled,
+filtered or using French. The real Pinyin mode retains uppercase `V` while
+accepting `ü` and `u:` as reading-entry aliases. JVM regression checks cover
+language-switch commit guards, structured-field restrictions, synthetic-candidate
+learning isolation, ordinary preview/space behavior and full OK selection.
+
+Runtime verification used only a disposable, read-only API 35 emulator. These
+new changes were not installed on the Mive phone. This follow-up's R8 result is
+a build check; its runtime result is from debug APKs. Earlier minified/device
+results below remain historical evidence, not new coverage of these changes.
+
+Local evidence is outside the checkout under `TT9-build-support`: the
+`issues-903-1051-final-build.log`, `issues-903-1051-python-tests.log`, production
+conversion output, and `issues-903-1051-runtime/report-full.json`. The earlier
+Lite import report records successful Chinese checks before an English fixture
+setup failure: the test had used the Chinese-only local-pack API for an English
+ZIP. The final Full run uses the public loader and bundled English dictionary.
+
+## Earlier PR #1210 results, before this follow-up
 
 | Check | Result |
 | --- | --- |
@@ -41,7 +74,7 @@ coverage is the API 35 smoke described below; Mive used the debug artifacts.
 Lint and Gradle warnings are present; this contribution does not claim a
 warning-free build.
 
-The current revision moves Chinese expanded layout, row numbering, separators and
+The preceding revision moved Chinese expanded layout, row numbering, separators and
 navigation into the optional split, adds seven default-off domain vocabularies,
 reclassifies settings and separates host single-row speed from Chinese expanded
 speed. The engine and speed totals above cover this revision. The earlier device

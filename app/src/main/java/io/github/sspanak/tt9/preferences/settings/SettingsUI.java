@@ -164,6 +164,7 @@ public class SettingsUI extends SettingsTyping {
 	}
 
 	public boolean getChinesePrefixCompletion() { return prefs.getBoolean("pref_chinese_prefix_completion", true); }
+	public boolean getChineseCommitOnLanguageSwitch() { return prefs.getBoolean("pref_chinese_commit_on_language_switch", true); }
 	public boolean getChineseCommonOnly() { return prefs.getBoolean("pref_chinese_common_only", false); }
 	public int getChineseFuzzyOptions() {
 		int options = 0;
