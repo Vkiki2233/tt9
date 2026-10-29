@@ -52,6 +52,12 @@ require the new metadata and are never redirected to a data-only dictionary.
 Deleting the Chinese dictionary removes its settings and private pack data, then
 asks Android to remove both optional splits. Declining that confirmation leaves
 the code installed but the dictionary and Chinese profile are already removed.
+The Languages entry remains available for completing a cancelled removal, even
+if Chinese has been deselected. Pending state is reconciled against the actual
+installed splits because native removal can kill its completion callback.
+An intentionally emptied Chinese dictionary does not automatically download
+again on a cold IME start; explicit download/import still reinstalls it. Removal
+also clears queued installer offers and interrupted UUID staging/backup folders.
 If Chinese remains enabled, the same Languages entry remains available to import
 the pack again. Deselecting a language does not delete it. User words and their explicit
 readings survive removal and return when the pack/dictionary is reloaded.

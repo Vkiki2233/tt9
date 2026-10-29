@@ -53,7 +53,12 @@ public final class ChinesePackInstaller {
 
 	public static boolean isInstalled(Context context) { return installedApk(context, SPLIT_NAME) != null; }
 	public static boolean isLanguageInstalled(Context context) { return installedApk(context, LANGUAGE_SPLIT_NAME) != null; }
-	static boolean isRemovalPending(Context context) { return state(context).getBoolean(REMOVE, false); }
+	public static boolean isRemovalPending(Context context) {
+		if (!state(context).getBoolean(REMOVE, false)) return false;
+		if (isInstalled(context) || isLanguageInstalled(context)) return true;
+		completed(context); // Removing splits can kill the callback activity before it records success.
+		return false;
+	}
 
 	public static boolean needsInstall(Context context) {
 		File downloaded = ChinesePack.getApk(context);
@@ -91,6 +96,9 @@ public final class ChinesePackInstaller {
 	}
 
 	public static void dictionaryRemoved(Context context) {
+		state(context).edit().clear().apply();
+		NotificationManager manager = context.getSystemService(NotificationManager.class);
+		if (manager != null) manager.cancel(NOTIFICATION_ID);
 		if (!isInstalled(context) && !isLanguageInstalled(context)) return;
 		state(context).edit().putBoolean(REMOVE, true).apply();
 		schedule(context);
@@ -118,8 +126,10 @@ public final class ChinesePackInstaller {
 		if (Build.VERSION.SDK_INT >= 26) {
 			manager.createNotificationChannel(new NotificationChannel(CHANNEL, context.getString(R.string.chinese_pack_title), NotificationManager.IMPORTANCE_DEFAULT));
 		}
+		Intent intent = new Intent(context, ChinesePackInstallActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+			.putExtra("download_pack", !isRemovalPending(context) && !needsInstall(context));
 		PendingIntent action = PendingIntent.getActivity(context, NOTIFICATION_ID,
-			new Intent(context, ChinesePackInstallActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+			intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 		manager.notify(NOTIFICATION_ID, new NotificationCompat.Builder(context, CHANNEL)
 			.setSmallIcon(R.drawable.ic_dictionary_update).setContentTitle(context.getString(R.string.chinese_pack_title))
 			.setContentText(context.getString(R.string.chinese_pack_system_confirmation)).setContentIntent(action).setAutoCancel(true).build());
@@ -127,9 +137,11 @@ public final class ChinesePackInstaller {
 
 	/** Called only from a resumed settings Activity; cancellation must not create a prompt loop. */
 	public static void offer(Activity activity) {
+		boolean removing = isRemovalPending(activity);
 		if (activity.isFinishing() || activity.isDestroyed() || !state(activity).getBoolean(OFFER, false)) return;
 		state(activity).edit().putBoolean(OFFER, false).apply();
-		if (isRemovalPending(activity) || needsInstall(activity) || !isInstalled(activity) || !ChinesePack.isDataAvailable(activity)) launch(activity);
+		if (removing || needsInstall(activity)) launch(activity);
+		else if (!isInstalled(activity) || !ChinesePack.isDataAvailable(activity)) downloadPack(activity);
 	}
 
 	public static void launch(Activity activity) {

@@ -8,12 +8,12 @@ input contribution. See [the update description](chinese-update.md) for scope an
 
 | Check | Result |
 | --- | --- |
-| Host and Chinese feature unit tests | 214 tests passing in Full; 214 in Lite (73 host, 141 feature) |
+| Host and Chinese feature unit tests | 215 tests passing in Full; 215 in Lite (74 host, 141 feature) |
 | Debug APK and combined Chinese pack build | Passed |
-| Full debug Android lint | 0 errors, 386 warnings |
+| Full debug Android lint | 0 errors, 387 warnings |
 | Updated Full release with R8 and resource shrinking, including combined pack | Build passed |
-| Updated Full release Android lint | 0 errors, 386 warnings |
-| Lite debug Android lint | 0 errors, 386 warnings |
+| Updated Full release Android lint | 0 errors, 387 warnings |
+| Lite debug Android lint | 0 errors, 387 warnings |
 | Delivery packaging | Full debug, Lite debug and minified Full release built and validated against actual base/split hashes |
 | Release preparation tests | 14 Python archive/inventory cases and isolated Groovy delivery-identity checks passed |
 | Final Full delivery on API 35 | 404, truncation and wrong-base rollback passed; valid download, stable cancellation and cached Finish installation preserved all nine tables and functional preferences |
@@ -21,6 +21,8 @@ input contribution. See [the update description](chinese-update.md) for scope an
 | Final Mive provenance build | 2/2 download/install and Chinese-input paths passed; fresh nine-table and user-preference snapshots unchanged |
 | Lite ordinary loading and local provenance on API 35 | Versioned online loading passed; a one-word legacy local pack stayed usable offline with no GET, then online loading restored all 482,284 factory rows |
 | Final minified delivery build on API 35 | Real matching SAF import/native installation, exact APK hashes, native caret and expanded candidates passed |
+| Fresh Chinese removal, API 35 debug | Delete/cancel/finish/reinstall passed; Chinese defaults reset, personal/global data retained and no automatic re-download |
+| Final minified selective removal, API 35 | Real Delete Unselected/cancel/finish passed; 173,916 English rows and personal-table hashes unchanged, both splits removed, zero Chinese download requests |
 | Mive, Android 12, current edit/scroll combinations | 9/9 passed; three-option speed dialog also verified |
 | API 35 current optional-domain engine checks | 252/252 passed, including all 103 new pairs enabled/disabled |
 | API 35 current interactive speed choices and native repeats | 9/9 passed: English, Pinyin and expanded panel, three speeds each |
@@ -198,6 +200,49 @@ notices and a closed checksum inventory. Fourteen Python cases reject damaged,
 stale and mismatched archives, wrong tags, overwritten assets and unlisted files.
 Workflow YAML, embedded Python and 19 shell blocks passed syntax checks; shell
 blocks were not executed as a publication test.
+
+## Chinese removal regression verification
+
+A fresh API 35 emulator run revisited removal after the in-app delivery change.
+It reproduced automatic re-download on a cold Chinese IME start and a missing
+completion action after cancelling Android's split-removal prompt. Completing
+native removal could also kill the callback before it cleared the pending flag,
+leaving a stale Finish action. These are removal regressions, not failures of
+the earlier download/install or candidate-operation matrices.
+
+The corrected debug lifecycle used the real Languages deletion action and native
+Cancel/confirmation. All 13 seeded Chinese preference keys and the private pack
+were cleared, including two interrupted UUID staging/backup directories.
+Personal-word and explicit-reading table hashes, enabled-language IDs, ordinary
+candidate speed and star/pound swap were preserved. Chinese interface language
+returned to System. Confirmed removal left only the base APK, and a cold Chinese
+input attempt made zero download requests. Explicit reinstallation restored
+482,284 factory rows plus the saved personal word/reading; Roomy was off, expanded
+speed was Normal and no old domain choices or domain learning returned. A fresh
+installation with no stored dictionary hash still downloaded normally.
+
+The final debug build additionally passed completed-removal reconciliation and
+stale-offer checks. An actual no-extra installer Activity finished without
+opening installation UI or making a request; a headless removal with no installed
+splits cleared the queued offer without launching an Activity. These state
+fixtures used an external test APK, not new production debug paths. The staging
+cleanup also has a host unit test that verifies unrelated files are retained.
+
+The final Full release build was installed without debuggable mode and exercised
+real SAF import and Android installation before selective removal. English stayed
+selected, Chinese was unchecked, and Languages → Delete Unselected removed only
+Chinese. Cancelling native consent left the splits installed and the completion
+action available; after a cold start, explicitly re-enabling Chinese still made
+zero download requests. Continue removal then removed both splits. All four
+English tables, including 173,916 words, and both personal-word/reading tables
+retained their exact hashes throughout. All Chinese preferences and pack files
+were absent, while the English UI preference, Fast ordinary-row speed and
+star/pound swap remained set. An external read-only instrumentation APK inspected
+private state through Android/SQLite APIs; production optimizer rules and
+debuggable settings were unchanged.
+
+These fresh removal tests use the API 35 emulator. The Mive delivery tests above
+precede the removal fixes; this round does not update or re-test that phone.
 
 ## Reproduce the debug build
 

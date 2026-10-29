@@ -152,6 +152,9 @@ public class DictionaryLoader {
 				lastAutoLoadAttemptTime.put(language.getId(), System.currentTimeMillis());
 
 				final boolean noDictionary = hash == null || hash.isEmpty();
+				// An existing Chinese dictionary deliberately emptied by Delete stays removed until an explicit load.
+				if (LanguageKind.isChinesePinyin(language) && !noDictionary
+					&& !new ReadOps().exists(WordDbOpener.getInstance(context).getDb(), language.getId())) return;
 				// Local imports remain usable offline, but are not proof of the bundled dictionary's identity.
 				final String comparisonHash = hash != null && hash.startsWith("local:") ? hash.substring(6) : hash;
 				final boolean isDictionaryOutdated = noDictionary || !comparisonHash.equals(new WordFile(context, language, context.getAssets()).getHash());

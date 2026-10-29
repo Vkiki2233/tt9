@@ -22,6 +22,28 @@ public class ChinesePackTest {
 	@Rule public TemporaryFolder temporary = new TemporaryFolder();
 	private static final String[] REQUIRED_PAYLOADS = {"common-3500.txt", "zh-simplified-prefixes.bin", "chinese.apk", "chinese-ui.apk"};
 
+	@Test public void removalAlsoClearsInterruptedStagingWithoutTouchingOtherFiles() throws IOException {
+		File root = temporary.newFolder();
+		String pending = "chinese-pack-pending-01234567-89ab-cdef-0123-456789abcdef";
+		for (String name : new String[]{"chinese-pack", pending, pending + "-previous"}) {
+			File directory = new File(root, name);
+			assertTrue(directory.mkdir());
+			Files.writeString(new File(directory, "delivery.properties").toPath(), "metadata");
+			Files.writeString(new File(directory, "chinese.apk").toPath(), "code");
+		}
+		File unrelated = new File(root, "chinese-pack-pending-not-a-uuid");
+		assertTrue(unrelated.mkdir());
+		File personal = new File(root, "personal-words.txt");
+		Files.writeString(personal.toPath(), "keep");
+		ChinesePack.removeFiles(root);
+		assertFalse(new File(root, "chinese-pack").exists());
+		assertFalse(new File(root, pending).exists());
+		assertFalse(new File(root, pending + "-previous").exists());
+		assertTrue(unrelated.isDirectory());
+		assertEquals("keep", Files.readString(personal.toPath()));
+		assertEquals(2, root.list().length);
+	}
+
 	@Test public void availableDataRequiresBothNonemptyRegularFiles() throws IOException {
 		File root = temporary.newFolder();
 		assertFalse(ChinesePack.isDataAvailable(root));

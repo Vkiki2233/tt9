@@ -27,7 +27,7 @@
 - 个人词导入／导出统一使用 **语言 → 自定义字词** 的原有入口，中文词语管理页专注于添加、搜索、修改和删除读音，不再重复放置同一组导入／导出按钮。
 - 增加六组可独立开启的模糊音：n/l、z/zh、c/ch、s/sh、en/eng、in/ing，默认关闭。
 - 增加可选生僻字过滤，依据 2013 年《通用规范汉字表》的 3,500 个一级字，默认关闭；明确保存的用户词仍可显示。
-- 删除中文字典会清除中文设置和私有包数据，并请求 Android 移除功能和翻译分包。个人词与读音保留，重新导入后可继续使用。若界面语言选了中文，会回到跟随系统；英文偏好保留。若取消系统移除确认，代码分包仍在，但中文配置已清除。中文仍启用时，语言设置中的同一个入口可继续用于重新导入中文包。仅取消勾选语言会保留数据。
+- 删除中文字典会清除中文设置、私有包数据及中断安装的临时文件，并请求 Android 移除功能和翻译分包。个人词与读音保留，重新导入后可继续使用。若界面语言选了中文，会回到跟随系统；英文偏好保留。若取消系统移除确认，代码分包仍在，但中文配置已清除；即使已取消勾选中文，也能从语言设置继续移除。完成移除后不会自动重新下载；中文仍启用时，同一个入口可供手动重新安装。全局候选条速度、星号／井号互换等主包设置保留。仅取消勾选语言会保留数据。
 - 保留全局星号／井号互换选项，方便适配不同实体键盘布局。
 - 增加默认关闭、可分别启用的七类领域词包：游戏／ACG、医学、金融、心理、生物化学、工程、计算机与技术。共 2,980 条分类记录，合并为 2,961 组词语／读音；其中 103 组是主词库尚未收录的原创词条，其余用于领域排序。保留首选、常用单字和用户词的优先级；停用后恢复普通排序，领域学习独立保存在本机。[词源、授权与维护说明](chinese-domain-vocabulary.md)。
 
@@ -70,7 +70,7 @@ This document describes a contribution to upstream Traditional T9 and can be use
 - Uses the existing **Languages → Added Words** import/export actions once. The Chinese word manager focuses on add, search, edit and per-reading deletion without duplicating those buttons.
 - Adds six independently optional fuzzy rules: n/l, z/zh, c/ch, s/sh, en/eng, and in/ing. All are off by default.
 - Adds an optional rare-character filter based on the 3,500 level-one characters in the 2013 national Table of General Standard Chinese Characters. It is off by default and preserves explicitly saved user words.
-- Removing the Chinese dictionary clears its profile and private pack data and asks Android to remove both feature and translation splits. Personal words/readings survive and return after reimport. A selected Chinese UI language returns to System; an English preference is retained. Declining Android's removal confirmation leaves the code splits installed while the Chinese profile is cleared. If Chinese remains enabled, the same Languages entry remains available to reimport the pack. Merely disabling the language preserves its data.
+- Removing the Chinese dictionary clears its profile, private pack data and interrupted staging files, then asks Android to remove both feature and translation splits. Personal words/readings survive and return after reimport. A selected Chinese UI language returns to System; an English preference is retained. Declining Android's confirmation leaves the code splits installed while the Chinese profile is cleared; Languages still offers completion of that removal even after Chinese is deselected. Completed removal does not trigger automatic re-download. If Chinese remains enabled, the same entry allows explicit reinstallation. Global candidate-row speed and star/pound swap settings are retained. Merely disabling the language preserves its data.
 - Retains the global star/pound swap setting for different physical keypad layouts.
 - Adds seven independently enabled domain vocabularies, all off by default: games/ACG, medicine, finance, psychology, biochemistry, engineering, and computing/technology. Their 2,980 category rows merge into 2,961 word/reading pairs, including 103 new original pairs; existing factory pairs provide opt-in domain priority. Leading candidates, frequent single characters and personal words retain priority. Disabling restores ordinary ranking; domain learning is local and separate. See [sources, licenses and maintenance](chinese-domain-vocabulary.md).
 

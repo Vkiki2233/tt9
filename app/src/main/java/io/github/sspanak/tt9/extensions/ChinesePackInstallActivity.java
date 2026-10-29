@@ -65,8 +65,7 @@ public class ChinesePackInstallActivity extends Activity {
 				.setType("application/zip").putExtra(Intent.EXTRA_MIME_TYPES, new String[] {"application/zip", "application/x-zip-compressed", "application/octet-stream"}), PICK_PACK);
 			return;
 		}
-		if (getIntent().getBooleanExtra("download_pack", false)
-			|| (!ChinesePackInstaller.isRemovalPending(this) && !ChinesePackInstaller.needsInstall(this))) {
+		if (getIntent().getBooleanExtra("download_pack", false)) {
 			LanguageCollection.init(this);
 			Language language = LanguageCollection.getByLocale("zh_CN");
 			showImportProgress();
@@ -75,6 +74,11 @@ public class ChinesePackInstallActivity extends Activity {
 			if (language == null || !DictionaryLoader.downloadChinesePack(this, new SettingsStore(this), language, importResult)) {
 				fail("Chinese download is unavailable or already running");
 			}
+			return;
+		}
+		if (!ChinesePackInstaller.isRemovalPending(this) && !ChinesePackInstaller.needsInstall(this)) {
+			ChinesePackInstaller.completed(this);
+			finish();
 			return;
 		}
 		beginInstall();

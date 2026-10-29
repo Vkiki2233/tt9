@@ -29,20 +29,27 @@ public class ChinesePackScreen extends BaseScreenFragment {
 		});
 		Preference install = findPreference("install_chinese_pack");
 		if (install != null) {
-			install.setVisible(activity != null && ChinesePackInstaller.needsInstall(activity));
 			install.setOnPreferenceClickListener(preference -> {
 				if (activity != null) ChinesePackInstaller.launch(activity);
 				return true;
 			});
 		}
+		refreshInstallAction();
 	}
 
 	@Override public void onResume() {
 		super.onResume();
-		Preference install = findPreference("install_chinese_pack");
-		if (install != null) install.setVisible(activity != null && ChinesePackInstaller.needsInstall(activity));
+		refreshInstallAction();
 		if (activity != null) ChineseSettingsProfile.checkAvailable(activity, activity.getSettings(), installed -> {
 			if (isAdded() && !installed) activity.getOnBackPressedDispatcher().onBackPressed();
 		});
+	}
+
+	private void refreshInstallAction() {
+		Preference install = findPreference("install_chinese_pack");
+		if (install == null || activity == null) return;
+		boolean removing = ChinesePackInstaller.isRemovalPending(activity);
+		install.setTitle(removing ? R.string.chinese_pack_finish_removal : R.string.chinese_pack_finish_install);
+		install.setVisible(removing || ChinesePackInstaller.needsInstall(activity));
 	}
 }

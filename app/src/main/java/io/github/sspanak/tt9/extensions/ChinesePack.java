@@ -118,11 +118,21 @@ public final class ChinesePack {
 	public static void remove(Context context) {
 		generation.incrementAndGet();
 		try {
-			delete(directory(context));
+			removeFiles(context.getFilesDir());
 		} catch (IOException exception) {
 			Logger.e(ChinesePack.class.getSimpleName(), exception.getMessage());
 		}
 		ChinesePackInstaller.dictionaryRemoved(context);
+	}
+
+	static void removeFiles(File filesDirectory) throws IOException {
+		delete(new File(filesDirectory, DIRECTORY));
+		File[] siblings = filesDirectory.listFiles();
+		if (siblings == null) return;
+		for (File file : siblings) {
+			if (file.getName().matches(DIRECTORY + "-pending-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}(-previous)?")
+				&& filesDirectory.getCanonicalFile().equals(file.getCanonicalFile().getParentFile())) delete(file);
+		}
 	}
 
 	private static void delete(File file) throws IOException {

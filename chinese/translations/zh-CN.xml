@@ -344,5 +344,6 @@
 	<string name="chinese_pack_import">从文件安装中文包</string>
 	<string name="chinese_pack_import_summary">选择与当前主程序一起提供的中文 ZIP，包内包含词库、离线数据及签名中文扩展；安装时需要 Android 系统确认。</string>
 	<string name="chinese_pack_finish_install">完成中文扩展安装</string>
+	<string name="chinese_pack_finish_removal">继续移除中文功能</string>
 	<string name="chinese_pack_importing">正在导入中文词库及扩展…</string>
 </resources>
